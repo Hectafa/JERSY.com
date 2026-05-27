@@ -1,0 +1,82 @@
+/* Breadcrumb component */
+.breadcrumb {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: clamp(8px, 1.5vw, 12px) 0;
+}
+
+.breadcrumb-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.breadcrumb-link {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2xs, 6px);
+  color: var(--muted);
+  text-decoration: none;
+  padding: var(--gap-2xs, 4px) var(--gap-xs, 8px);
+  border-radius: var(--radius-sm, 4px);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.breadcrumb-link:hover {
+  color: var(--accent);
+  background: var(--hover-bg);
+}
+
+.breadcrumb-current {
+  color: var(--text);
+  font-weight: 600;
+  padding: 4px 8px;
+}
+
+.breadcrumb-separator {
+  color: var(--text-light);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .breadcrumb {
+    padding: 8px 0;
+  }
+
+  .breadcrumb-list {
+    font-size: 13px;
+    gap: 2px;
+  }
+
+  .breadcrumb-link,
+  .breadcrumb-current {
+    padding: 3px 6px;
+  }
+
+  .breadcrumb-link .breadcrumb-text {
+    display: none; /* Ocultar texto "Inicio" en móvil, solo mostrar icono */
+  }
+
+  .breadcrumb-separator {
+    margin: 0 1px;
+  }
+}
+
+/* Dark theme adjustments */
+:root[data-theme="dark"] .breadcrumb-link:hover {
+  background: var(--hover-bg);
+}

@@ -1,0 +1,190 @@
+/* 1) Reset mínimo y tipografía */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 2) Variables CSS completas */
+:root {
+  /* Colores de la paleta */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-strong-blue: #26336c;
+  --color-purple: #8677b5;
+  --color-pink: #d38fb9;
+  --color-yellow: #e7e000;
+  --color-green: #79bf87;
+  --color-blue: #3eb7ea;
+  --color-red: #dc2626;
+  --color-light-gray: #ededed;
+  --color-strong-gray: #d1d2d2;
+  --color-gray: #6b7280;
+  --color-dark: #1f2937;
+  --color-darker: #111827;
+
+  /* Tema claro */
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #cbd5e1;
+  --accent: var(--color-strong-blue);
+  --accent-contrast: #ffffff;
+  --accent-rgb: 38, 51, 108;
+
+  /* Variables adicionales */
+  --radius: 8px;
+  --r1: 4px;
+  --r2: 6px;
+  --r3: 8px;
+  --r4: 12px;
+  --r5: 16px;
+  --gap: 16px;
+
+  /* Elevaciones */
+  --elev-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --elev-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --elev-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --elev-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  --elev-5: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+}
+
+/* Tema oscuro */
+:root[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: #334155;
+  --accent: var(--color-blue);
+  --accent-contrast: #ffffff;
+  --accent-rgb: 62, 183, 234;
+}
+
+/* 3) Utilidades base */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 24px);
+}
+
+.container-wide {
+  max-width: 1400px;
+}
+.container-narrow {
+  max-width: 800px;
+}
+
+.grid {
+  display: grid;
+  gap: var(--gap);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.flex {
+  display: flex;
+  gap: clamp(12px, 2vw, 16px);
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-center {
+  align-items: center;
+  justify-content: center;
+}
+.flex-between {
+  justify-content: space-between;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Tipografía */
+.h1 {
+  font-size: clamp(30px, 4vw, 38px);
+  font-weight: 700;
+  margin: 0 0 12px;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+}
+
+.h2 {
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 600;
+  margin: 0 0 8px;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+
+.muted {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Componentes base */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-1);
+  padding: 16px;
+}
+
+/* Focus y accesibilidad */
+:where(button, input, select, textarea, a):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+a {
+  color: var(--accent);
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  color: color-mix(in srgb, var(--accent) 80%, black);
+}
+
+/* Tema oscuro específico */
+[data-theme="dark"] a:hover {
+  color: color-mix(in srgb, var(--accent) 80%, white);
+}
+
+/* Responsive base */
+@media (max-width: 768px) {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}

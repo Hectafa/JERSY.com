@@ -1,0 +1,30 @@
+/* Base layout */
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max-width, 1400px);
+  margin: 0 auto;
+  padding: clamp(var(--gap-md, 16px), 3vw, var(--gap-lg, 32px));
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    padding: clamp(12px, 2vw, 20px);
+  }
+}
+
+@media print {
+  .layout {
+    background: white;
+    color: black;
+  }
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "_id": "691262744278bbc102261a4a",
+    "name": "Home",
+    "address1": "Calle 1",
+    "address2": "Colonia 1",
+    "postalCode": "20000",
+    "city": "Aguascalientes",
+    "country": "México",
+    "reference": "Entre calle A y B",
+    "default": true
+  },
+  {
+    "_id": "691262743258bbc102261a4a",
+    "name": "Work",
+    "address1": "Calle 2",
+    "address2": "Colonia 2",
+    "postalCode": "20000",
+    "city": "Aguascalientes",
+    "country": "México",
+    "reference": "Entre calle A y B",
+    "default": false
+  }
+]

@@ -1,0 +1,28 @@
+[
+    {
+        "_id": "690eb4b4f62bb3fb3e9947f3",
+        "alias": "Banorte",
+        "userId": "67fc9bda370302bf46079352",
+        "type": "credit_card",
+        "cardNumber": "4444-4444-4444-4444",
+        "cardHolderName": "Rodrigo",
+        "expiryDate": "08/31",
+        "cvv": "123",
+        "isDefault": false,
+        "isActive": true,
+        "__v": 0
+    },
+    {
+        "_id": "691262743278bbc102261a4a",
+        "alias": "Bancomer",
+        "userId": "67fc9bda370302bf46079352",
+        "type": "credit_card",
+        "cardNumber": "4444-4444-4444-5555",
+        "placeHolder": "Rodrigo",
+        "expiryDate": "08/31",
+        "cvv": "123",
+        "isDefault": true,
+        "isActive": true,
+        "__v": 0
+    }
+]

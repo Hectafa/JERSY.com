@@ -1,0 +1,108 @@
+[
+  {
+    "_id": "68c396f6a24a7edc4233c9e5",
+    "name": "Android",
+    "description": "Modelos Android",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": {
+      "_id": "68c396f6a24a7edc4233c9db",
+      "name": "Celulares",
+      "description": "Smartphones y accesorios",
+      "imageURL": "https://placehold.co/800x600.png",
+      "parentCategory": null
+    }
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9eb",
+    "name": "Auriculares",
+    "description": "Audífonos y accesorios",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": {
+      "_id": "68c396f6a24a7edc4233c9e1",
+      "name": "Gadgets",
+      "description": "Tecnología y accesorios",
+      "imageURL": "https://placehold.co/800x600.png",
+      "parentCategory": null
+    }
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9db",
+    "name": "Celulares",
+    "description": "Smartphones y accesorios",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": null
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9e1",
+    "name": "Gadgets",
+    "description": "Tecnología y accesorios",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": null
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9ed",
+    "name": "Gaming",
+    "description": "PCs para gaming",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": {
+      "_id": "68c396f6a24a7edc4233c9df",
+      "name": "PCs",
+      "description": "Laptops y computadoras Windows",
+      "imageURL": "https://placehold.co/800x600.png",
+      "parentCategory": null
+    }
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9e7",
+    "name": "MacBook",
+    "description": "Laptops MacBook",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": {
+      "_id": "68c396f6a24a7edc4233c9dd",
+      "name": "Macs",
+      "description": "Laptops y computadoras Apple",
+      "imageURL": "https://placehold.co/800x600.png",
+      "parentCategory": null
+    }
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9dd",
+    "name": "Macs",
+    "description": "Laptops y computadoras Apple",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": null
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9df",
+    "name": "PCs",
+    "description": "Laptops y computadoras Windows",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": null
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9e9",
+    "name": "Smartwatch",
+    "description": "Relojes inteligentes",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": {
+      "_id": "68c396f6a24a7edc4233c9e1",
+      "name": "Gadgets",
+      "description": "Tecnología y accesorios",
+      "imageURL": "https://placehold.co/800x600.png",
+      "parentCategory": null
+    }
+  },
+  {
+    "_id": "68c396f6a24a7edc4233c9e3",
+    "name": "iPhone",
+    "description": "Modelos de iPhone",
+    "imageURL": "https://placehold.co/800x600.png",
+    "parentCategory": {
+      "_id": "68c396f6a24a7edc4233c9db",
+      "name": "Celulares",
+      "description": "Smartphones y accesorios",
+      "imageURL": "https://placehold.co/800x600.png",
+      "parentCategory": null
+    }
+  }
+]

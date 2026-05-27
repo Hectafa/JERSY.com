@@ -1,0 +1,1263 @@
+/* Base footer - Mobile First */
+.footer {
+  margin-top: auto;
+}
+
+/* Newsletter Section - Mobile First */
+.footer-newsletter {
+  background: linear-gradient(
+    135deg,
+    var(--color-strong-blue),
+    var(--color-purple)
+  );
+  padding: 24px 0;
+}
+
+.newsletter-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+}
+
+.newsletter-text h3 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--color-white);
+}
+
+.newsletter-text p {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 15px;
+  color: var(--color-white);
+}
+
+.newsletter-form {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.newsletter-input-group {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.newsletter-input {
+  padding: 14px 16px;
+  border: none;
+  font-size: 16px;
+  color: var(--color-dark);
+  background: transparent;
+}
+
+.newsletter-input::placeholder {
+  color: var(--color-gray);
+}
+
+.newsletter-input:focus {
+  outline: none;
+}
+
+.newsletter-btn {
+  padding: 14px 20px;
+  background: var(--color-blue);
+  color: var(--color-white);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.newsletter-btn:hover {
+  background: color-mix(in srgb, var(--color-blue) 85%, black);
+  transform: translateY(-1px);
+}
+
+/* Main Footer - Mobile First */
+.footer-main {
+  background: var(--color-white);
+  color: var(--color-dark);
+  padding: 32px 0 24px;
+  border-bottom: 1px solid var(--color-light-gray);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+.footer-section h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: var(--color-dark);
+}
+
+.footer-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--color-dark);
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-section ul li {
+  margin-bottom: 10px;
+}
+
+.footer-section ul li a {
+  color: var(--color-gray);
+  text-decoration: none;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  line-height: 1.5;
+  display: inline-block;
+}
+
+.footer-section ul li a:hover {
+  color: var(--color-purple);
+  transform: translateX(4px);
+}
+
+/* Company Section */
+.footer-logo .logo {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-strong-blue);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.footer-logo .logo:hover {
+  color: var(--color-purple);
+  transform: scale(1.05);
+}
+
+.footer-description {
+  color: var(--color-gray);
+  line-height: 1.6;
+  margin: 16px 0 24px;
+  font-size: 15px;
+}
+
+.social-links h4 {
+  margin-bottom: 16px;
+  color: var(--color-dark);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Social Icons - Fixed */
+.social-icons {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.social-icons a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--color-light-gray);
+  color: var(--color-gray);
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.social-icons a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.social-icons a:hover {
+  color: var(--color-white);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.social-icons a:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Social Networks Colors */
+.social-icons a[href*="facebook"]:hover::before,
+.social-icons a[aria-label*="Facebook"]:hover::before {
+  background: linear-gradient(
+    135deg,
+    var(--color-blue),
+    var(--color-strong-blue)
+  );
+}
+
+.social-icons a[href*="twitter"]:hover::before,
+.social-icons a[href*="x.com"]:hover::before,
+.social-icons a[aria-label*="Twitter"]:hover::before,
+.social-icons a[aria-label*="X"]:hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+.social-icons a[href*="instagram"]:hover::before,
+.social-icons a[aria-label*="Instagram"]:hover::before {
+  background: linear-gradient(135deg, var(--color-pink), var(--color-purple));
+}
+
+.social-icons a[href*="youtube"]:hover::before,
+.social-icons a[aria-label*="YouTube"]:hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-pink));
+}
+
+.social-icons a[href*="linkedin"]:hover::before,
+.social-icons a[aria-label*="LinkedIn"]:hover::before {
+  background: linear-gradient(
+    135deg,
+    var(--color-blue),
+    var(--color-strong-blue)
+  );
+}
+
+.social-icons a[href*="tiktok"]:hover::before,
+.social-icons a[aria-label*="TikTok"]:hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-pink));
+}
+
+.social-icons a[href*="whatsapp"]:hover::before,
+.social-icons a[aria-label*="WhatsApp"]:hover::before {
+  background: linear-gradient(135deg, var(--color-green), var(--color-blue));
+}
+
+.social-icons a[href*="telegram"]:hover::before,
+.social-icons a[aria-label*="Telegram"]:hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+.social-icons a[href*="discord"]:hover::before,
+.social-icons a[aria-label*="Discord"]:hover::before {
+  background: linear-gradient(135deg, var(--color-purple), var(--color-blue));
+}
+
+.social-icons a[href*="snapchat"]:hover::before,
+.social-icons a[aria-label*="Snapchat"]:hover::before {
+  background: linear-gradient(135deg, var(--color-yellow), var(--color-pink));
+}
+
+.social-icons a[href*="pinterest"]:hover::before,
+.social-icons a[aria-label*="Pinterest"]:hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-pink));
+}
+
+.social-icons a[href*="github"]:hover::before,
+.social-icons a[aria-label*="GitHub"]:hover::before {
+  background: linear-gradient(135deg, var(--color-dark), var(--color-purple));
+}
+
+.social-icons a[href*="twitch"]:hover::before,
+.social-icons a[aria-label*="Twitch"]:hover::before {
+  background: linear-gradient(135deg, var(--color-purple), var(--color-pink));
+}
+
+/* Trust Badges Section - Mobile First */
+.footer-trust {
+  background: var(--color-light-gray);
+  padding: 24px 0;
+  border-bottom: 1px solid var(--color-strong-gray);
+}
+
+.trust-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  text-align: center;
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.trust-item .icon {
+  color: var(--color-blue);
+  flex-shrink: 0;
+  font-size: 24px;
+  transition: all 0.3s ease;
+}
+
+.trust-item:hover .icon {
+  color: var(--color-purple);
+  transform: scale(1.1);
+}
+
+.trust-item div {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.trust-item strong {
+  font-weight: 700;
+  color: var(--color-dark);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.trust-item span {
+  color: var(--color-gray);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+/* Payment Methods Section - Mobile First */
+.footer-payment {
+  background: var(--color-strong-gray);
+  padding: 20px 0;
+}
+
+.payment-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  text-align: center;
+}
+
+.payment-section h4,
+.contact-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--color-dark);
+}
+
+.payment-icons {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.payment-icons .icon {
+  transition: all 0.3s ease;
+  color: var(--color-gray);
+  font-size: 32px;
+  cursor: pointer;
+}
+
+.payment-icons .icon:hover {
+  transform: translateY(-3px) scale(1.1);
+}
+
+/* Payment Methods Colors */
+.payment-icons .icon:nth-child(1):hover {
+  color: var(--color-blue);
+}
+
+.payment-icons .icon:nth-child(2):hover {
+  color: var(--color-purple);
+}
+
+.payment-icons .icon:nth-child(3):hover {
+  color: var(--color-green);
+}
+
+.payment-icons .icon:nth-child(4):hover {
+  color: var(--color-pink);
+}
+
+.payment-icons .icon:nth-child(5):hover {
+  color: var(--color-yellow);
+}
+
+.payment-icons .icon:nth-child(6):hover {
+  color: var(--color-red);
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--color-gray);
+}
+
+.contact-details span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.contact-details .icon {
+  color: var(--color-blue);
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.contact-details span:hover .icon {
+  color: var(--color-purple);
+  transform: scale(1.1);
+}
+
+/* Footer Bottom - Mobile First */
+.footer-bottom {
+  background: var(--accent);
+  padding: 20px 0;
+}
+
+.footer-bottom-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.copyright {
+  font-size: 14px;
+  color: var(--color-light-gray);
+  font-weight: 500;
+}
+
+.legal-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.legal-links a {
+  color: var(--color-light-gray);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.legal-links a:hover {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Tablet Responsive */
+@media (min-width: 481px) {
+  .social-icons {
+    justify-content: flex-start;
+  }
+
+  .trust-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trust-item {
+    justify-content: flex-start;
+  }
+
+  .contact-details span {
+    justify-content: flex-start;
+  }
+
+  .payment-icons {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 768px) {
+  .newsletter-content {
+    flex-direction: row;
+    text-align: left;
+    gap: 32px;
+  }
+
+  .newsletter-input-group {
+    flex-direction: row;
+  }
+
+  .newsletter-btn {
+    border-radius: 0 8px 8px 0;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+
+  .trust-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .payment-content {
+    grid-template-columns: 1fr auto;
+    text-align: left;
+    gap: 32px;
+  }
+
+  .footer-bottom-content {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+
+@media (min-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 2fr repeat(3, 1fr);
+    gap: 48px;
+  }
+
+  .trust-content {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Dark Theme - Enhanced Contrast */
+[data-theme="dark"] .newsletter-btn {
+  background: var(--color-pink);
+}
+
+[data-theme="dark"] .newsletter-btn:hover {
+  background: color-mix(in srgb, var(--color-pink) 85%, black);
+}
+
+[data-theme="dark"] .footer-main {
+  background: var(--surface);
+  color: var(--text);
+}
+
+[data-theme="dark"] .footer-section h3,
+[data-theme="dark"] .footer-section h4 {
+  color: var(--color-white);
+}
+
+[data-theme="dark"] .footer-section ul li a {
+  color: var(--color-light-gray);
+}
+
+[data-theme="dark"] .footer-section ul li a:hover {
+  color: var(--color-yellow);
+}
+
+[data-theme="dark"] .footer-logo .logo {
+  color: var(--color-pink);
+}
+
+[data-theme="dark"] .footer-logo .logo:hover {
+  color: var(--color-yellow);
+}
+
+[data-theme="dark"] .footer-description {
+  color: var(--color-light-gray);
+}
+
+[data-theme="dark"] .social-links h4 {
+  color: var(--color-white);
+}
+
+[data-theme="dark"] .footer-trust {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .footer-payment {
+  background: var(--surface);
+}
+
+[data-theme="dark"] .trust-item strong,
+[data-theme="dark"] .payment-section h4,
+[data-theme="dark"] .contact-info h4 {
+  color: var(--color-white);
+}
+
+[data-theme="dark"] .trust-item span,
+[data-theme="dark"] .contact-details {
+  color: var(--color-light-gray);
+}
+
+[data-theme="dark"] .trust-item .icon,
+[data-theme="dark"] .contact-details .icon {
+  color: var(--color-pink);
+}
+
+[data-theme="dark"] .trust-item:hover .icon,
+[data-theme="dark"] .contact-details span:hover .icon {
+  color: var(--color-yellow);
+}
+
+[data-theme="dark"] .payment-icons .icon {
+  color: var(--color-light-gray);
+}
+
+[data-theme="dark"] .social-icons a {
+  background: var(--bg);
+  color: var(--color-light-gray);
+}
+
+[data-theme="dark"] .social-icons a:hover {
+  color: var(--color-white);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Enhanced Social Colors for Dark Mode */
+[data-theme="dark"] .social-icons a[href*="facebook"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Facebook"]:hover::before {
+  background: linear-gradient(135deg, #1877f2, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="twitter"]:hover::before,
+[data-theme="dark"] .social-icons a[href*="x.com"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Twitter"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="X"]:hover::before {
+  background: linear-gradient(135deg, #1da1f2, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="instagram"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Instagram"]:hover::before {
+  background: linear-gradient(135deg, #e4405f, #833ab4, #fd1d1d, #fcb045);
+}
+
+[data-theme="dark"] .social-icons a[href*="youtube"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="YouTube"]:hover::before {
+  background: linear-gradient(135deg, #ff0000, var(--color-pink));
+}
+
+[data-theme="dark"] .social-icons a[href*="linkedin"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="LinkedIn"]:hover::before {
+  background: linear-gradient(135deg, #0077b5, var(--color-blue));
+}
+
+[data-theme="dark"] .social-icons a[href*="tiktok"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="TikTok"]:hover::before {
+  background: linear-gradient(135deg, #ff0050, #00f2ea);
+}
+
+[data-theme="dark"] .social-icons a[href*="whatsapp"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="WhatsApp"]:hover::before {
+  background: linear-gradient(135deg, #25d366, var(--color-green));
+}
+
+[data-theme="dark"] .social-icons a[href*="telegram"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Telegram"]:hover::before {
+  background: linear-gradient(135deg, #0088cc, var(--color-blue));
+}
+
+[data-theme="dark"] .social-icons a[href*="discord"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Discord"]:hover::before {
+  background: linear-gradient(135deg, #5865f2, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="snapchat"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Snapchat"]:hover::before {
+  background: linear-gradient(135deg, #fffc00, var(--color-yellow));
+}
+
+[data-theme="dark"] .social-icons a[href*="pinterest"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Pinterest"]:hover::before {
+  background: linear-gradient(135deg, #bd081c, var(--color-red));
+}
+
+[data-theme="dark"] .social-icons a[href*="github"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="GitHub"]:hover::before {
+  background: linear-gradient(135deg, #333, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="twitch"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Twitch"]:hover::before {
+  background: linear-gradient(135deg, #9146ff, var(--color-purple));
+}
+
+/* Print Styles */
+@media print {
+  .footer-newsletter,
+  .footer-trust,
+  .footer-payment,
+  .social-icons {
+    display: none;
+  }
+
+  .footer {
+    background: white;
+    color: black;
+    border-top: 1px solid black;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Colores específicos para cada red social */
+.social-icons a[href*="facebook"]:hover::before,
+.social-icons a[aria-label*="Facebook"]:hover::before {
+  background: linear-gradient(
+    135deg,
+    var(--color-blue),
+    var(--color-strong-blue)
+  );
+}
+
+.social-icons a[href*="twitter"]:hover::before,
+.social-icons a[href*="x.com"]:hover::before,
+.social-icons a[aria-label*="Twitter"]:hover::before,
+.social-icons a[aria-label*="X"]:hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+.social-icons a[href*="instagram"]:hover::before,
+.social-icons a[aria-label*="Instagram"]:hover::before {
+  background: linear-gradient(135deg, var(--color-pink), var(--color-purple));
+}
+
+.social-icons a[href*="youtube"]:hover::before,
+.social-icons a[aria-label*="YouTube"]:hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-pink));
+}
+
+.social-icons a[href*="linkedin"]:hover::before,
+.social-icons a[aria-label*="LinkedIn"]:hover::before {
+  background: linear-gradient(
+    135deg,
+    var(--color-blue),
+    var(--color-strong-blue)
+  );
+}
+
+.social-icons a[href*="tiktok"]:hover::before,
+.social-icons a[aria-label*="TikTok"]:hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-pink));
+}
+
+.social-icons a[href*="whatsapp"]:hover::before,
+.social-icons a[aria-label*="WhatsApp"]:hover::before {
+  background: linear-gradient(135deg, var(--color-green), var(--color-blue));
+}
+
+.social-icons a[href*="telegram"]:hover::before,
+.social-icons a[aria-label*="Telegram"]:hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+.social-icons a[href*="discord"]:hover::before,
+.social-icons a[aria-label*="Discord"]:hover::before {
+  background: linear-gradient(135deg, var(--color-purple), var(--color-blue));
+}
+
+.social-icons a[href*="snapchat"]:hover::before,
+.social-icons a[aria-label*="Snapchat"]:hover::before {
+  background: linear-gradient(135deg, var(--color-yellow), var(--color-pink));
+}
+
+.social-icons a[href*="pinterest"]:hover::before,
+.social-icons a[aria-label*="Pinterest"]:hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-pink));
+}
+
+/* Efectos adicionales para redes menos comunes */
+.social-icons a[href*="github"]:hover::before,
+.social-icons a[aria-label*="GitHub"]:hover::before {
+  background: linear-gradient(135deg, var(--color-dark), var(--color-purple));
+}
+
+.social-icons a[href*="twitch"]:hover::before,
+.social-icons a[aria-label*="Twitch"]:hover::before {
+  background: linear-gradient(135deg, var(--color-purple), var(--color-pink));
+}
+
+/* Fallback para iconos sin identificar - usando paleta rotativa */
+.social-icons
+  a:nth-child(1):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+.social-icons
+  a:nth-child(2):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-pink), var(--color-yellow));
+}
+
+.social-icons
+  a:nth-child(3):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-green), var(--color-blue));
+}
+
+.social-icons
+  a:nth-child(4):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-purple));
+}
+
+.social-icons
+  a:nth-child(5):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-yellow), var(--color-green));
+}
+
+/* Trust badges - fondo light gray */
+.footer-trust {
+  background: var(--color-light-gray);
+  padding: 20px 0;
+  border-bottom: 1px solid var(--color-strong-gray);
+}
+
+.trust-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 24px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trust-item .icon {
+  color: var(--color-strong-blue);
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.trust-item div {
+  display: flex;
+  flex-direction: column;
+}
+
+.trust-item strong {
+  font-weight: 600;
+  color: var(--color-dark);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.trust-item span {
+  color: var(--color-gray);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+/* Payment methods - fondo gris más claro */
+.footer-payment {
+  background: var(--color-strong-gray);
+  padding: 16px 0;
+}
+
+.payment-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 24px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+}
+
+.payment-section h4,
+.contact-info h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--color-dark);
+}
+
+.payment-icons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.payment-icons .icon {
+  transition: all 0.2s ease;
+  color: var(--color-gray);
+  font-size: 28px;
+}
+
+.payment-icons .icon:hover {
+  color: var(--color-strong-blue);
+  transform: translateY(-2px);
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-gray);
+}
+
+.contact-details span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contact-details .icon {
+  color: var(--color-strong-blue);
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+/* Footer bottom - ÚNICO FONDO OSCURO */
+.footer-bottom {
+  background: var(--accent);
+  padding: 16px 0;
+}
+
+.footer-bottom-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 24px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.copyright {
+  font-size: 13px;
+  color: var(--color-light-gray);
+}
+
+.legal-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.legal-links a {
+  color: var(--color-light-gray);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s ease;
+}
+
+.legal-links a:hover {
+  color: var(--color-white);
+}
+
+/* Responsive - ajustado para versión compacta */
+@media (max-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 32px;
+  }
+
+  .trust-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .newsletter-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .newsletter-input-group {
+    flex-direction: column;
+  }
+
+  .newsletter-btn {
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .trust-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .payment-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .footer-bottom-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .legal-links {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .social-icons {
+    justify-content: center;
+  }
+
+  .trust-item {
+    justify-content: center;
+  }
+
+  .payment-icons {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .payment-icons .icon {
+    font-size: 24px;
+  }
+}
+
+/* Dark theme adjustments - manteniendo estructura */
+[data-theme="dark"] .newsletter-btn {
+  background: var(--color-pink);
+}
+
+[data-theme="dark"] .newsletter-btn:hover {
+  background: color-mix(in srgb, var(--color-pink) 85%, black);
+}
+
+[data-theme="dark"] .footer-main {
+  background: var(--surface);
+  color: var(--text);
+}
+
+[data-theme="dark"] .footer-section h3,
+[data-theme="dark"] .footer-section h4 {
+  color: var(--text);
+}
+
+[data-theme="dark"] .footer-section ul li a {
+  color: var(--muted);
+}
+
+[data-theme="dark"] .footer-section ul li a:hover {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .footer-logo .logo {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .footer-trust {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .footer-payment {
+  background: var(--surface);
+}
+
+[data-theme="dark"] .trust-item .icon,
+[data-theme="dark"] .contact-details .icon {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .payment-icons .icon:hover {
+  color: var(--accent);
+}
+
+/* Social icons dark mode adjustments */
+[data-theme="dark"] .social-icons a {
+  background: var(--bg);
+  color: var(--muted);
+}
+
+[data-theme="dark"] .social-icons a:hover {
+  color: var(--color-white);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradientes más brillantes para modo oscuro */
+[data-theme="dark"] .social-icons a[href*="facebook"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Facebook"]:hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="twitter"]:hover::before,
+[data-theme="dark"] .social-icons a[href*="x.com"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Twitter"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="X"]:hover::before {
+  background: linear-gradient(135deg, #1da1f2, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="instagram"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Instagram"]:hover::before {
+  background: linear-gradient(135deg, #e4405f, #833ab4, #fd1d1d, #fcb045);
+}
+
+[data-theme="dark"] .social-icons a[href*="youtube"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="YouTube"]:hover::before {
+  background: linear-gradient(135deg, #ff0000, var(--color-pink));
+}
+
+[data-theme="dark"] .social-icons a[href*="linkedin"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="LinkedIn"]:hover::before {
+  background: linear-gradient(135deg, #0077b5, var(--color-blue));
+}
+
+[data-theme="dark"] .social-icons a[href*="tiktok"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="TikTok"]:hover::before {
+  background: linear-gradient(135deg, #ff0050, #00f2ea);
+}
+
+[data-theme="dark"] .social-icons a[href*="whatsapp"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="WhatsApp"]:hover::before {
+  background: linear-gradient(135deg, #25d366, var(--color-green));
+}
+
+[data-theme="dark"] .social-icons a[href*="telegram"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Telegram"]:hover::before {
+  background: linear-gradient(135deg, #0088cc, var(--color-blue));
+}
+
+[data-theme="dark"] .social-icons a[href*="discord"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Discord"]:hover::before {
+  background: linear-gradient(135deg, #5865f2, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="snapchat"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Snapchat"]:hover::before {
+  background: linear-gradient(135deg, #fffc00, var(--color-yellow));
+}
+
+[data-theme="dark"] .social-icons a[href*="pinterest"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Pinterest"]:hover::before {
+  background: linear-gradient(135deg, #bd081c, var(--color-red));
+}
+
+[data-theme="dark"] .social-icons a[href*="github"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="GitHub"]:hover::before {
+  background: linear-gradient(135deg, #333, var(--color-purple));
+}
+
+[data-theme="dark"] .social-icons a[href*="twitch"]:hover::before,
+[data-theme="dark"] .social-icons a[aria-label*="Twitch"]:hover::before {
+  background: linear-gradient(135deg, #9146ff, var(--color-purple));
+}
+
+/* Fallbacks más vibrantes para modo oscuro */
+[data-theme="dark"]
+  .social-icons
+  a:nth-child(1):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+}
+
+[data-theme="dark"]
+  .social-icons
+  a:nth-child(2):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-pink), #fffc00);
+}
+
+[data-theme="dark"]
+  .social-icons
+  a:nth-child(3):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-green), var(--color-blue));
+}
+
+[data-theme="dark"]
+  .social-icons
+  a:nth-child(4):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-red), var(--color-purple));
+}
+
+[data-theme="dark"]
+  .social-icons
+  a:nth-child(5):not([href*="facebook"]):not([href*="twitter"]):not(
+    [href*="instagram"]
+  ):not([href*="youtube"]):hover::before {
+  background: linear-gradient(135deg, var(--color-yellow), var(--color-green));
+}
+
+[data-theme="dark"] .categories-menu-btn:hover {
+  background: var(--bg);
+}
+
+/* Print styles */
+@media print {
+  .footer-newsletter,
+  .footer-trust,
+  .footer-payment,
+  .social-icons {
+    display: none;
+  }
+
+  .footer {
+    background: white;
+    color: black;
+    border-top: 1px solid black;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

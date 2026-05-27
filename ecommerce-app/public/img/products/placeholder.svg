@@ -1,0 +1,7 @@
+<!-- SVG Placeholder para productos -->
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none"
+  xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="200" fill="#f0f0f0"/>
+  <rect x="110" y="80" width="80" height="40" rx="4" fill="#d1d1d1"/>
+  <text x="150" y="105" text-anchor="middle" fill="#888" font-family="system-ui" font-size="12">Producto</text>
+</svg>
