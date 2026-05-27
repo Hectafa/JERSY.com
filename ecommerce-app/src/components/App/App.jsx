@@ -11,10 +11,12 @@ import Orders from "../../pages/Orders";
 import Product from "../../pages/Product";
 import Profile from "../../pages/Profile";
 import ProtectedRoute from "../../pages/ProtectedRoute";
+import Register from "../../pages/Register";
 import SearchResults from "../../pages/SearchResults";
 import Settings from "../../pages/Setttings";
 import WishList from "../../pages/WishList";
 import { AuthProvider } from "../../context/AuthContext";
+
 
 function App() {
   return (
@@ -76,6 +78,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/register" element={<Register/>} />
               <Route path="*" element={<div>Ruta no encontrada</div>} />
             </Routes>
           </Layout>
