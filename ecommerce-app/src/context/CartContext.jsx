@@ -1,92 +1,105 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { useAuth } from "./AuthContext";
+import {
+  getCart as serviceGetCart,
+  addItem as serviceAddItem,
+  updateQuantity as serviceUpdateQuantity,
+  removeItem as serviceRemoveItem,
+  clearCart as serviceClearCart,
+} from "../services/cartService";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
-  // Inicializamos el estado con los datos del localStorage directamente
-  const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem("cart");
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const { isAuthenticated } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Calcular el total basado en los items del carrito
-  const calculateTotal = (items) => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  };
-
-  // Mantener el total actualizado
-  const [total, setTotal] = useState(() => {
-    const savedCart = localStorage.getItem("cart");
-    const items = savedCart ? JSON.parse(savedCart) : [];
-    return calculateTotal(items);
-  });
-
-  // Actualizar localStorage cuando cambie el carrito
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-    setTotal(calculateTotal(cartItems));
-  }, [cartItems]);
-
-  const removeFromCart = (productId) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item._id !== productId)
-    );
-  };
-
-  const updateQuantity = (productId, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(productId);
+    if (!isAuthenticated) {
+      setItems([]);
       return;
     }
 
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
+    let cancelled = false;
 
-  const addToCart = (product, quantity = 1) => {
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item._id === product._id);
-
-      if (existingItem) {
-        return prevItems.map((item) =>
-          item._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        return [...prevItems, { ...product, quantity }];
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await serviceGetCart();
+        if (!cancelled) setItems(data.items);
+      } catch (error) {
+        if (!cancelled) setError(error.kind ?? "SERVER_ERROR");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const count = useMemo(
+    () => items.reduce((acc, it) => acc + it.quantity, 0),
+    [items],
+  );
+
+  const total = useMemo(
+    () => items.reduce((acc, it) => acc + it.quantity * it.product.price, 0),
+    [items],
+  );
+
+  const addItem = async (product, quantity = 1) => {
+    const previous = items;
+    setItems((curr) => {
+      const existing = curr.find((it) => it.product.id === product.id);
+
+      if(existing) {
+        return curr.map((it) => it.product.id === product.id ? { ...it, quantity: it.quantity + quantity} : it);
+      }
+      return [...curr, { id: product.id, quantity, product }];
     });
-  };
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
+    try {
+    const data = await serviceAddItem(product.id, quantity);
+    setItems(data.items);
+    } catch (error) {
+    setItems(previous);
+    setError(error.kind || "SERVER_ERROR");  
+    }
+  }
 
-  const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
-  };
+  const updateQuantity = async (itemId, quantity) => {
+    const previous = items;
 
-  const getTotalPrice = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-  };
+    setItems((curr) => curr.map((it) => it.id === itemId ? {...it, quantity } : it ));
 
-  const value = {
-    cartItems,
-    total: getTotalPrice(),
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getTotalItems,
-    getTotalPrice,
-  };
+    try {
+      const data = await serviceUpdateQuantity(itemId, quantity);
+      setItems(data.items);
+    } catch (error) {
+      setItems(previous);
+      setError(error.kind || "SERVER_ERROR");
+    }
+  }
+
+  const removeItem = async (itemId) => {
+    const previous = items;
+    setItems((curr) => curr.filter((it) => it.id === itemId)); 
+
+    try {
+      const data = await serviceRemoveItem(itemId);
+      setItems(data.items);
+    } catch (error) {
+      setItems(previous);
+      setError(error.kind || "SERVER_ERROR");
+      
+    }
+  }
+
+  const value = { items, count, total, loading, error };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
