@@ -16,8 +16,7 @@ export default function Header() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { isDarkMode, toggleTheme } = useTheme();
-  const { getTotalItems } = useCart();
-  const totalItems = getTotalItems();
+  const { count } = useCart();
 
   // Referencias para manejo de clicks fuera
   const userMenuRef = useRef(null);
@@ -340,7 +339,7 @@ export default function Header() {
                 aria-label="Ver carrito de compras"
               >
                 <Icon name="shoppingCart" size={24} />
-                <span className="cart-badge">{totalItems}</span>
+                <span className="cart-badge">{count}</span>
               </Link>
 
               {/* Desktop Theme Toggle */}

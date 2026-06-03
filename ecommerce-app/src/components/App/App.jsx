@@ -17,12 +17,11 @@ import Settings from "../../pages/Setttings";
 import WishList from "../../pages/WishList";
 import { AuthProvider } from "../../context/AuthContext";
 
-
 function App() {
   return (
-    <CartProvider>
-      <BrowserRouter>
-        <AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <CartProvider>
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -78,13 +77,13 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/register" element={<Register/>} />
+              <Route path="/register" element={<Register />} />
               <Route path="*" element={<div>Ruta no encontrada</div>} />
             </Routes>
           </Layout>
-        </AuthProvider>
-      </BrowserRouter>
-    </CartProvider>
+        </CartProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

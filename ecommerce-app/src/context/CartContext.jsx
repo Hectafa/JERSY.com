@@ -7,11 +7,12 @@ import {
   removeItem as serviceRemoveItem,
   clearCart as serviceClearCart,
 } from "../services/cartService";
+import { updateCart } from "../../../ecommerce-api/src/controllers/cartController";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -53,28 +54,47 @@ export function CartProvider({ children }) {
 
   const addItem = async (product, quantity = 1) => {
     const previous = items;
+
+    //UPDATE
     setItems((curr) => {
       const existing = curr.find((it) => it.product.id === product.id);
-
-      if(existing) {
-        return curr.map((it) => it.product.id === product.id ? { ...it, quantity: it.quantity + quantity} : it);
+      if (existing) {
+        return curr.map((it) =>
+          it.product.id === product.id
+            ? { ...it, quantity: it.quantity + quantity }
+            : it,
+        );
       }
-      return [...curr, { id: product.id, quantity, product }];
+      return [...curr, { product, quantity }];
     });
 
     try {
-    const data = await serviceAddItem(product.id, quantity);
-    setItems(data.items);
+      const userId = user.id;
+      const products = items.map((it) => ({
+        product: it.product._id,
+        quantity: it.quantity,
+      }));
+
+      let data;
+      if (!cartId) {
+        data = await serviceAddItem(userId, products);
+        setCartId(data._id);
+      } else {
+        data = await updateCart(cartId, userId, products);
+      }
+      setItems(data.items);
     } catch (error) {
-    setItems(previous);
-    setError(error.kind || "SERVER_ERROR");  
+      setItems(previous);
+      setError(error.kind || "SERVER_ERROR");
     }
-  }
+  };
 
   const updateQuantity = async (itemId, quantity) => {
     const previous = items;
 
-    setItems((curr) => curr.map((it) => it.id === itemId ? {...it, quantity } : it ));
+    setItems((curr) => {
+      curr.map((it) => (it.id === itemId ? { ...it, quantity } : it));
+    });
 
     try {
       const data = await serviceUpdateQuantity(itemId, quantity);
@@ -83,11 +103,12 @@ export function CartProvider({ children }) {
       setItems(previous);
       setError(error.kind || "SERVER_ERROR");
     }
-  }
+  };
 
   const removeItem = async (itemId) => {
     const previous = items;
-    setItems((curr) => curr.filter((it) => it.id === itemId)); 
+
+    setItems((curr) => curr.filter((it) => it.id === itemId));
 
     try {
       const data = await serviceRemoveItem(itemId);
@@ -95,11 +116,19 @@ export function CartProvider({ children }) {
     } catch (error) {
       setItems(previous);
       setError(error.kind || "SERVER_ERROR");
-      
     }
-  }
+  };
 
-  const value = { items, count, total, loading, error };
+  const value = {
+    items,
+    count,
+    total,
+    addItem,
+    updateQuantity,
+    removeItem,
+    loading,
+    error,
+  };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
