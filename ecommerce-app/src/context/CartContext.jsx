@@ -1,46 +1,56 @@
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 import {
-  getCart as serviceGetCart,
-  addItem as serviceAddItem,
-  updateQuantity as serviceUpdateQuantity,
-  removeItem as serviceRemoveItem,
+  getCartByUser,
+  createCart,
+  replaceCart,
   clearCart as serviceClearCart,
 } from "../services/cartService";
-import { updateCart } from "../../../ecommerce-api/src/controllers/cartController";
+import { readLocalJSON, writeLocalJSON } from "../utils/storageHelpers";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
+  const CART_STORAGE_KEY = "cart";
+
   const { isAuthenticated, user } = useAuth();
-  const [items, setItems] = useState([]);
+  const [cartId, setCartId] = useState(null);
+  const [items, setItems] = useState(() =>
+    setItems(readLocalJSON(CART_STORAGE_KEY) ?? []),
+  );
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    setItems(writeLocalJSON(CART_STORAGE_KEY, items));
+  }, [items]);
+
+  useEffect(() => {
     if (!isAuthenticated) {
-      setItems([]);
+      setCartId(null);
       return;
     }
 
     let cancelled = false;
 
     (async () => {
-      setLoading(true);
+      const localItems = readLocalJSON(CART_STORAGE_KEY) ?? [];
       try {
-        const data = await serviceGetCart();
-        if (!cancelled) setItems(data.items);
+        const serverCart = await getCartByUser(user.id);
+        if (cancelled) return;
+        setCartId(serverCart._id);
       } catch (error) {
-        if (!cancelled) setError(error.kind ?? "SERVER_ERROR");
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (cancelled) return;
+        if (error.kind !== "NOT_FOUND") {
+          setError(error.kind ?? "SERVER_ERROR");
+        }
       }
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   const count = useMemo(
     () => items.reduce((acc, it) => acc + it.quantity, 0),
@@ -53,70 +63,68 @@ export function CartProvider({ children }) {
   );
 
   const addItem = async (product, quantity = 1) => {
-    const previous = items;
+    const existingProduct = items.find(
+      (item) => item.product._id === product._id,
+    );
 
-    //UPDATE
-    setItems((curr) => {
-      const existing = curr.find((it) => it.product.id === product.id);
-      if (existing) {
-        return curr.map((it) =>
-          it.product.id === product.id
-            ? { ...it, quantity: it.quantity + quantity }
-            : it,
-        );
-      }
-      return [...curr, { product, quantity }];
-    });
+    const nextItems = existingProduct
+      ? items.map((item) =>
+          item.product._id === product._id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item,
+        )
+      : [...items, { product, quantity }];
 
-    try {
-      const userId = user.id;
-      const products = items.map((it) => ({
-        product: it.product._id,
-        quantity: it.quantity,
-      }));
-
-      let data;
-      if (!cartId) {
-        data = await serviceAddItem(userId, products);
-        setCartId(data._id);
-      } else {
-        data = await updateCart(cartId, userId, products);
-      }
-      setItems(data.items);
-    } catch (error) {
-      setItems(previous);
-      setError(error.kind || "SERVER_ERROR");
-    }
+    changeItems(nextItems);
   };
 
   const updateQuantity = async (itemId, quantity) => {
-    const previous = items;
+    if (quantity < 1) removeItem(itemId);
 
-    setItems((curr) => {
-      curr.map((it) => (it.id === itemId ? { ...it, quantity } : it));
-    });
+    const nextItems = items.map((item) =>
+      item.product._id === itemId ? { ...item, quantity } : item,
+    );
 
-    try {
-      const data = await serviceUpdateQuantity(itemId, quantity);
-      setItems(data.items);
-    } catch (error) {
-      setItems(previous);
-      setError(error.kind || "SERVER_ERROR");
-    }
+    changeItems(nextItems);
   };
 
   const removeItem = async (itemId) => {
-    const previous = items;
+    const actualItems = items.filter((item) => item.product._id !== itemId);
+    changeItems(actualItems);
+  };
 
-    setItems((curr) => curr.filter((it) => it.id === itemId));
+  const clearCart = () => changeItems([]);
 
-    try {
-      const data = await serviceRemoveItem(itemId);
-      setItems(data.items);
-    } catch (error) {
-      setItems(previous);
-      setError(error.kind || "SERVER_ERROR");
+  const syncWithApi = async (nextItems) => {
+    if (!isAuthenticated) return;
+
+    // Carrito vacío = el usuario no tiene un carrito
+    if (nextItems.length === 0) {
+      if (cartId) {
+        await serviceClearCart(cartId);
+        setCartId(null);
+      }
     }
+
+    const products = nextItems.map((item) => ({
+      product: item.product._id,
+      quantity: item.quantity,
+    }));
+
+    if (!cartId) {
+      const created = await createCart(user.id, products);
+      setCartId(created._id);
+    } else {
+      await replaceCart(cartId, user.id, products);
+    }
+  };
+
+  const changeItems = (nextItems) => {
+    setItems(nextItems);
+    setError(null);
+    syncWithApi(nextItems).catch((err) => {
+      setError(err.kind ?? "SERVER_ERROR");
+    });
   };
 
   const value = {
@@ -126,6 +134,7 @@ export function CartProvider({ children }) {
     addItem,
     updateQuantity,
     removeItem,
+    clearCart,
     loading,
     error,
   };
