@@ -22,7 +22,7 @@ import "./Checkout.css";
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, total, clearCart } = useCart();
+  const { items: cartItems, total, clearCart } = useCart();
 
   // --- LÓGICA DE NEGOCIO FINANCIERA ---
   // Cálculos derivados del estado del carrito.

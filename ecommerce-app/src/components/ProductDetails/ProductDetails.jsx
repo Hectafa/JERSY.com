@@ -10,7 +10,7 @@ import Loading from "../common/Loading/Loading";
 import "./ProductDetails.css";
 
 export default function ProductDetails({ productId }) {
-  const { addToCart } = useCart();
+  const { addItem: addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

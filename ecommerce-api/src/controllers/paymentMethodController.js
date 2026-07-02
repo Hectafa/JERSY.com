@@ -1,5 +1,15 @@
 import PaymentMethod from "../models/PaymentMethod.js";
 
+const getPaymentMethodsByUser = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const paymentMethods = await PaymentMethod.find({ user: userId });
+    res.status(200).json(paymentMethods);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getPaymentMethods = async (req, res, next) => {
   try {
     const paymentMethods = await PaymentMethod.find().populate("user");
@@ -112,6 +122,7 @@ const deletePaymentMethod = async (req, res, next) => {
 };
 
 export {
+  getPaymentMethodsByUser,
   getPaymentMethods,
   getPaymentMethodById,
   createPaymentMethod,

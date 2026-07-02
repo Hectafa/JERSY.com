@@ -5,7 +5,7 @@ import Button from "../common/Button";
 import "./ProductCard.css";
 
 export default function ProductCard({ product, orientation = "vertical" }) {
-  const { addToCart } = useCart();
+  const { addItem: addToCart } = useCart();
   const { name, price, stock, imagesUrl, description } = product || {};
 
   if (!product) {

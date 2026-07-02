@@ -120,6 +120,8 @@ export default function RegisterForm() {
       setFieldErrors(fieldErrors);
       return;
     }
+
+    setErrorKind(kind);
   };
 
   return (

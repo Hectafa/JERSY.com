@@ -1,15 +1,25 @@
-import shippingAddresses from "../data/shipping-address.json";
+import apiClient from "./apiClient";
 
-// Seguir el mismo patrón que otros servicios: retornar una Promise con delay
-export function getShippingAddresses() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(shippingAddresses || []);
-    }, 600); // pequeño delay simulado
-  });
+export async function getShippingAddresses() {
+  const { data } = await apiClient.get("/addresses");
+  return data.addresses || [];
 }
 
 export async function getDefaultShippingAddress() {
   const addresses = await getShippingAddresses();
-  return addresses.find((a) => a.default) || addresses[0] || null;
+  return addresses.find((a) => a.isDefault) || addresses[0] || null;
+}
+
+export async function createAddress(addressData) {
+  const { data } = await apiClient.post("/addresses", addressData);
+  return data;
+}
+
+export async function updateAddress(id, addressData) {
+  const { data } = await apiClient.put(`/addresses/${id}`, addressData);
+  return data;
+}
+
+export async function deleteAddress(id) {
+  await apiClient.delete(`/addresses/${id}`);
 }

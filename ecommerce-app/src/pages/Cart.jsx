@@ -6,7 +6,7 @@ import { useCart } from "../context/CartContext";
 import "./Cart.css";
 
 export default function Cart() {
-  const { items, count, total, clearCarts } = useCart();
+  const { items, count, total, clearCart } = useCart();
 
   const navigate = useNavigate();
 
@@ -37,7 +37,7 @@ export default function Cart() {
           <Button
             variant="ghost"
             className="danger clear-cart-btn"
-            onClick={clearCarts}
+            onClick={clearCart}
             title="Vaciar carrito"
             size="sm"
           >

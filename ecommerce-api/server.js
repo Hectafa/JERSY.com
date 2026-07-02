@@ -20,7 +20,6 @@ app.use(
 
 app.use(express.json());
 app.use(logger);
-app.use(errorHandler);
 
 connectDB();
 
@@ -33,10 +32,12 @@ app.use("/api", routes);
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
-    method: req.method, // GET / POST / PUT ...
-    url: req.originalUrl, // http://localhost:3000/...
+    method: req.method,
+    url: req.originalUrl,
   });
 });
+
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

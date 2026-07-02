@@ -7,10 +7,12 @@ import paymentMethodRoutes from "./paymentMethodRoutes.js";
 import productRoutes from "./productRoutes.js";
 import userRoutes from "./userRoutes.js";
 import wishlistRoutes from "./wishlistRoutes.js";
+import addressRoutes from "./addressRoutes.js";
 
 const router = express.Router();
 
 router.use("/auth", authRoutes);
+router.use(addressRoutes);
 router.use(cartRoutes);
 router.use(categoryRoutes);
 router.use(orderRoutes);
