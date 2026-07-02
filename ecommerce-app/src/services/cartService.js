@@ -1,30 +1,35 @@
 import apiClient from "./apiClient";
 
+// GET    /cart   → Todos los carritos de compra
 const getCart = async () => {
-    return apiClient.get("/cart");
+    const response = await apiClient.get("/cart");
+    return response.data;
 };
 
-// {
-//   user:"ASdasdasdasdsad"
-//   products:[
-//     product:"1asde3432r32422",
-//     quantity:1
-//   ]
-// }
-const addItem = async (userId, products) => {
-    return apiClient.post("/cart", { user: userId, products });
+// GET    /cart/user/:id   → carrito del usuario (404 = aún no tiene)
+const getCartByUser = async (userId) => {
+    const response = await apiClient.get(`/cart/user/${userId}`);
+    return response.data;
 };
 
-const updateQuantity = async (itemId, quantity) => {
-    return apiClient.patch(`/cart/${itemId}`, { quantity });
+// POST   /cart            → crea   { user, products }
+const createCart = async (userId, products) => {
+    const response = await apiClient.post("/cart", { user: userId, products });
+    return response.data;
 };
 
-const removeItem = async (itemId) => {
-    return apiClient.delete(`/cart/${itemId}`);
+// PUT    /cart/:id        → reemplazo total { user, products }
+const replaceCart = async (cartId, userId, products) => {
+    const response = await apiClient.put(`/cart/${cartId}`, {
+        user: userId,
+        products,
+    });
+    return response.data;
 };
 
-const clearCart = async () => {
-    return apiClient.delete("/cart");
+// DELETE /cart/:id        → elimina
+const clearCart = async (cartId) => {
+    await apiClient.delete(`/cart/${cartId}`);
 };
 
-export { getCart, addItem, updateQuantity, removeItem, clearCart };
+export { getCart, getCartByUser, createCart, replaceCart, clearCart };

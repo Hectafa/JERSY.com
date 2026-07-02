@@ -6,11 +6,11 @@ import { useCart } from "../context/CartContext";
 import "./Cart.css";
 
 export default function Cart() {
-  const { cartItems, clearCart, getTotalItems, getTotalPrice } = useCart();
+  const { items, count, total, clearCarts } = useCart();
 
   const navigate = useNavigate();
 
-  if (cartItems.length === 0) {
+  if (items?.length === 0) {
     return (
       <div className="cart-empty">
         <Icon name="cart" size={100}></Icon>
@@ -32,12 +32,12 @@ export default function Cart() {
         </div>
         <div className="cart-header-info">
           <span className="cart-items-count">
-            {getTotalItems()} {getTotalItems() === 1 ? "artículo" : "artículos"}
+            {count} {count === 1 ? "artículo" : "artículos"}
           </span>
           <Button
             variant="ghost"
             className="danger clear-cart-btn"
-            onClick={clearCart}
+            onClick={clearCarts}
             title="Vaciar carrito"
             size="sm"
           >
@@ -52,16 +52,16 @@ export default function Cart() {
         <div className="cart-summary">
           <div className="cart-total">
             <span className="cart-total-subtitle">Total a pagar</span>
-            <h2>${getTotalPrice().toFixed(2)}</h2>
+            <h2>${total.toFixed(2)}</h2>
           </div>
           <div className="cart-actions">
             <Button
               variant="primary"
               onClick={() => navigate("/checkout")}
               size="lg"
-              disabled={!cartItems || cartItems.length === 0}
+              disabled={!items || items.length === 0}
               title={
-                !cartItems || cartItems.length === 0
+                !items || items.length === 0
                   ? "Agrega productos al carrito para continuar"
                   : "Proceder al pago"
               }

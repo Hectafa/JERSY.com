@@ -15,15 +15,15 @@ export function CartProvider({ children }) {
 
   const { isAuthenticated, user } = useAuth();
   const [cartId, setCartId] = useState(null);
-  const [items, setItems] = useState(() =>
-    setItems(readLocalJSON(CART_STORAGE_KEY) ?? []),
-  );
+  const [items, setItems] = useState(() => {
+  return readLocalJSON(CART_STORAGE_KEY) ?? [];
+});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setItems(writeLocalJSON(CART_STORAGE_KEY, items));
+    writeLocalJSON(CART_STORAGE_KEY, items);
   }, [items]);
 
   useEffect(() => {
@@ -53,12 +53,12 @@ export function CartProvider({ children }) {
   }, [isAuthenticated, user?.id]);
 
   const count = useMemo(
-    () => items.reduce((acc, it) => acc + it.quantity, 0),
+    () => (items || []).reduce((acc, it) => acc + it.quantity, 0),
     [items],
   );
 
   const total = useMemo(
-    () => items.reduce((acc, it) => acc + it.quantity * it.product.price, 0),
+    () => (items || []).reduce((acc, it) => acc + it.quantity * it.product.price, 0),
     [items],
   );
 
