@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../../services/authService";
 import Button from "../common/Button";
-import ErrorMessage from "../common/ErrorMessage/ErrorMessage";
 import Input from "../common/Input";
 import RegisterErrorMessage from "../RegisterErrorMessage/RegisterErrorMessage";
 import "./RegisterForm.css";
@@ -129,7 +128,12 @@ export default function RegisterForm() {
       <div className="register-card">
         <h2>Crear cuenta</h2>
 
-        <form className="register-form" onSubmit={onSubmit} noValidate>
+        <form
+          className="register-form"
+          onSubmit={onSubmit}
+          noValidate
+          data-testid="register-form"
+        >
           <div className="form-group">
             <Input
               id="name"
@@ -138,9 +142,12 @@ export default function RegisterForm() {
               value={form.name}
               onChange={handleChange("name")}
               placeholder="Tu nombre"
+              data-testid="register-name-input"
             />
             {fieldErrors.name && (
-              <span className="field-error">{fieldErrors.name}</span>
+              <span className="field-error" data-testid="register-name-error">
+                {fieldErrors.name}
+              </span>
             )}
           </div>
 
@@ -152,9 +159,12 @@ export default function RegisterForm() {
               value={form.email}
               onChange={handleChange("email")}
               placeholder="tu@email.com"
+              data-testid="register-email-input"
             />
             {fieldErrors.email && (
-              <span className="field-error">{fieldErrors.email}</span>
+              <span className="field-error" data-testid="register-email-error">
+                {fieldErrors.email}
+              </span>
             )}
           </div>
 
@@ -166,9 +176,15 @@ export default function RegisterForm() {
               value={form.password}
               onChange={handleChange("password")}
               placeholder="Mínimo 6 caracteres"
+              data-testid="register-password-input"
             />
             {fieldErrors.password && (
-              <span className="field-error">{fieldErrors.password}</span>
+              <span
+                className="field-error"
+                data-testid="register-password-error"
+              >
+                {fieldErrors.password}
+              </span>
             )}
           </div>
 
@@ -180,9 +196,15 @@ export default function RegisterForm() {
               value={form.confirmPassword}
               onChange={handleChange("confirmPassword")}
               placeholder="Repite la contraseña"
+              data-testid="register-confirm-password-input"
             />
             {fieldErrors.confirmPassword && (
-              <span className="field-error">{fieldErrors.confirmPassword}</span>
+              <span
+                className="field-error"
+                data-testid="register-confirm-password-error"
+              >
+                {fieldErrors.confirmPassword}
+              </span>
             )}
           </div>
 
@@ -194,22 +216,32 @@ export default function RegisterForm() {
               value={form.phone}
               onChange={handleChange("phone")}
               placeholder="+52 55 1234 5678"
+              data-testid="register-phone-input"
             />
             {fieldErrors.phone && (
-              <span className="field-error">{fieldErrors.phone}</span>
+              <span className="field-error" data-testid="register-phone-error">
+                {fieldErrors.phone}
+              </span>
             )}
           </div>
 
           {errorKind && <RegisterErrorMessage kind={errorKind} />}
 
-          <Button disabled={loading} type="submit" variant="primary">
+          <Button
+            disabled={loading}
+            type="submit"
+            variant="primary"
+            data-testid="register-submit-button"
+          >
             {loading ? "Creando cuenta..." : "Crear cuenta"}
           </Button>
         </form>
 
         <div className="register-footer">
           <span>¿Ya tienes cuenta?</span>
-          <Link to="/login">Inicia sesión</Link>
+          <Link to="/login" data-testid="register-login-link">
+            Inicia sesión
+          </Link>
         </div>
       </div>
     </div>

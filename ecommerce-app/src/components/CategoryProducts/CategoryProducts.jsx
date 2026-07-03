@@ -10,7 +10,7 @@ import "./CategoryProducts.css";
 export default function CategoryProducts({ categoryId }) {
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
-  const [pagination, setPagination] = useState(null);
+  const [, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

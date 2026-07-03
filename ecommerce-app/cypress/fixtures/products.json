@@ -1,0 +1,11 @@
+{
+  "_comment": "No se usan IDs de producto fijos aquí: el catálogo real proviene de MongoDB (poblado con `npm run seedProducts` en ecommerce-api) y sus _id son generados por Mongo en cada seed. Las pruebas E2E obtienen un producto real en tiempo de ejecución vía GET /api/products?limit=1 (ver cypress/support/commands.js). Este fixture documenta únicamente la forma esperada de un producto.",
+  "template": {
+    "_id": "<mongo-object-id>",
+    "name": "string",
+    "description": "string",
+    "price": "number",
+    "stock": "number",
+    "category": "<mongo-object-id | null>"
+  }
+}

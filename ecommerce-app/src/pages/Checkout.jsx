@@ -9,19 +9,26 @@ import SummarySection from "../components/Checkout/shared/SummarySection";
 import Button from "../components/common/Button";
 import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
 import Loading from "../components/common/Loading/Loading";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { createOrder } from "../services/orderService";
 import {
+  createPaymentMethod,
   getDefaultPaymentMethod,
   getPaymentMethods,
+  updatePaymentMethod,
 } from "../services/paymentService";
 import {
+  createAddress,
   getDefaultShippingAddress,
   getShippingAddresses,
+  updateAddress,
 } from "../services/shippingService";
 import "./Checkout.css";
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { items: cartItems, total, clearCart } = useCart();
 
   // --- LÓGICA DE NEGOCIO FINANCIERA ---
@@ -37,7 +44,6 @@ export default function Checkout() {
   const grandTotal = parseFloat(
     (subtotal + taxAmount + shippingCost).toFixed(2)
   );
-  debugger;
   const [isOrderFinished, setIsOrderFinished] = useState(false);
 
   // Utilidad para formatear moneda (MXN)
@@ -52,13 +58,12 @@ export default function Checkout() {
   // Efecto de protección de ruta:
   // Si el carrito está vacío y no estamos en proceso de confirmación, redirigir al carrito.
   useEffect(() => {
-    debugger;
     if (!cartItems || cartItems.length === 0) {
       if (!isOrderFinished) {
         navigate("/cart");
       }
     }
-  }, [cartItems, navigate]);
+  }, [cartItems, navigate, isOrderFinished]);
 
   // --- ESTADOS LOCALES (Gestión de UI y Datos) ---
 
@@ -85,6 +90,12 @@ export default function Checkout() {
   // Selección actual del usuario
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+
+  // Estados de envío de formularios y de la orden final
+  const [addressSubmitError, setAddressSubmitError] = useState(null);
+  const [paymentSubmitError, setPaymentSubmitError] = useState(null);
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState(null);
 
   // --- CARGA DE DATOS INICIAL ---
   useEffect(() => {
@@ -185,37 +196,67 @@ export default function Checkout() {
 
   /**
    * Maneja el guardado (Creación o Edición) de una dirección.
-   * Actualiza la lista local y la selección automáticamente para mejorar UX.
+   * Persiste la dirección en el backend (POST/PUT /api/addresses) para obtener
+   * un ObjectId real, necesario para poder crear la orden más adelante.
    */
-  const handleAddressSubmit = (formData) => {
-    let updatedAddresses;
-    let newSelectedAddress = selectedAddress;
+  const handleAddressSubmit = async (formData) => {
+    setAddressSubmitError(null);
 
-    if (editingAddress) {
-      // EDICIÓN: Actualizamos la lista
-      updatedAddresses = addresses.map((addr) =>
-        addr._id === editingAddress._id ? { ...addr, ...formData } : addr
-      );
+    const payload = {
+      name: formData.name,
+      address: formData.address1,
+      city: formData.city,
+      state: formData.state,
+      postalCode: formData.postalCode,
+      country: formData.country,
+      phone: formData.phone,
+      isDefault: !!formData.default,
+    };
 
-      // Si la que editamos estaba seleccionada, actualizamos también el estado de selección
-      // para que refleje los cambios inmediatamente en el resumen.
-      if (selectedAddress?._id === editingAddress._id) {
-        newSelectedAddress = updatedAddresses.find(
-          (a) => a._id === editingAddress._id
+    try {
+      const saved = editingAddress
+        ? await updateAddress(editingAddress._id, payload)
+        : await createAddress(payload);
+
+      // Combinamos la respuesta real del backend (para tener un _id válido)
+      // con los campos que la UI ya usa para mostrar la dirección. El modelo
+      // Address del backend no define `name`, así que el campo se descarta
+      // silenciosamente al guardar (ver docs/testing.md, defecto D5); lo
+      // conservamos aquí desde formData para no perder la etiqueta elegida.
+      const viewAddress = {
+        ...saved,
+        name: formData.name,
+        address1: formData.address1,
+        address2: formData.address2,
+        reference: formData.reference,
+        default: saved.isDefault,
+      };
+
+      let updatedAddresses;
+      let newSelectedAddress = selectedAddress;
+
+      if (editingAddress) {
+        updatedAddresses = addresses.map((addr) =>
+          addr._id === editingAddress._id ? viewAddress : addr
         );
+        if (selectedAddress?._id === editingAddress._id) {
+          newSelectedAddress = viewAddress;
+        }
+      } else {
+        updatedAddresses = [...addresses, viewAddress];
+        newSelectedAddress = viewAddress;
       }
-    } else {
-      // CREACIÓN: Agregamos y seleccionamos automáticamente (UX tipo Amazon)
-      const newAddress = { _id: Date.now().toString(), ...formData };
-      updatedAddresses = [...addresses, newAddress];
-      newSelectedAddress = newAddress;
-    }
 
-    setAddresses(updatedAddresses);
-    setSelectedAddress(newSelectedAddress);
-    setShowAddressForm(false);
-    setEditingAddress(null);
-    setAddressSectionOpen(false);
+      setAddresses(updatedAddresses);
+      setSelectedAddress(newSelectedAddress);
+      setShowAddressForm(false);
+      setEditingAddress(null);
+      setAddressSectionOpen(false);
+    } catch (err) {
+      setAddressSubmitError(
+        "No se pudo guardar la dirección. Verifica los datos e intenta de nuevo."
+      );
+    }
   };
 
   /**
@@ -288,37 +329,61 @@ export default function Checkout() {
 
   /**
    * Maneja el guardado (Creación o Edición) de un método de pago.
-   * Actualiza la lista local y la selección automáticamente.
-   * @param {Object} formData - Datos del formulario de pago.
+   * Persiste el método de pago en el backend (POST/PUT /api/payment-methods)
+   * para obtener un ObjectId real, necesario para poder crear la orden.
+   * El formulario solo soporta tarjetas, por lo que el tipo se fija a "credit_card".
    */
-  const handlePaymentSubmit = (formData) => {
-    let updatedPayments;
-    let newSelectedPayment = selectedPayment;
+  const handlePaymentSubmit = async (formData) => {
+    setPaymentSubmitError(null);
 
-    if (editingPayment) {
-      // EDICIÓN
-      updatedPayments = payments.map((pay) =>
-        pay._id === editingPayment._id ? { ...pay, ...formData } : pay
-      );
+    const payload = {
+      user: user?.id,
+      type: "credit_card",
+      cardNumber: formData.cardNumber,
+      cardHolderName: formData.placeHolder,
+      expiryDate: formData.expiryDate,
+      cvv: formData.cvv,
+      isDefault: !!formData.isDefault,
+    };
 
-      // Sincronizar selección si se editó el actual
-      if (selectedPayment?._id === editingPayment._id) {
-        newSelectedPayment = updatedPayments.find(
-          (p) => p._id === editingPayment._id
+    try {
+      const saved = editingPayment
+        ? await updatePaymentMethod(editingPayment._id, payload)
+        : await createPaymentMethod(payload);
+
+      // Combinamos la respuesta real del backend (para tener un _id válido)
+      // con los campos que la UI ya usa para mostrar el método de pago.
+      const viewPayment = {
+        ...saved,
+        alias: formData.alias,
+        placeHolder: formData.placeHolder,
+      };
+
+      let updatedPayments;
+      let newSelectedPayment = selectedPayment;
+
+      if (editingPayment) {
+        updatedPayments = payments.map((pay) =>
+          pay._id === editingPayment._id ? viewPayment : pay
         );
+        if (selectedPayment?._id === editingPayment._id) {
+          newSelectedPayment = viewPayment;
+        }
+      } else {
+        updatedPayments = [...payments, viewPayment];
+        newSelectedPayment = viewPayment;
       }
-    } else {
-      // CREACIÓN: Auto-seleccionar
-      const newPayment = { _id: Date.now().toString(), ...formData };
-      updatedPayments = [...payments, newPayment];
-      newSelectedPayment = newPayment;
-    }
 
-    setPayments(updatedPayments);
-    setSelectedPayment(newSelectedPayment);
-    setShowPaymentForm(false);
-    setEditingPayment(null);
-    setPaymentSectionOpen(false);
+      setPayments(updatedPayments);
+      setSelectedPayment(newSelectedPayment);
+      setShowPaymentForm(false);
+      setEditingPayment(null);
+      setPaymentSectionOpen(false);
+    } catch (err) {
+      setPaymentSubmitError(
+        "No se pudo guardar el método de pago. Verifica los datos e intenta de nuevo."
+      );
+    }
   };
 
   /**
@@ -334,11 +399,14 @@ export default function Checkout() {
   // --- FINALIZACIÓN DE ORDEN ---
 
   /**
-   * Crea el objeto de orden final y simula el envío.
-   * Guarda en localStorage para persistencia simple y redirige.
+   * Crea la orden real vía POST /api/orders y, si tiene éxito, la guarda
+   * también en localStorage (para que /orders siga funcionando) y redirige
+   * a la confirmación. Bloquea envíos duplicados mientras la petición está
+   * en curso.
    */
-  const handleCreateOrder = () => {
+  const handleCreateOrder = async () => {
     if (
+      orderSubmitting ||
       !selectedAddress ||
       !selectedPayment ||
       !cartItems ||
@@ -347,30 +415,56 @@ export default function Checkout() {
       return;
     }
 
-    const order = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      items: cartItems.map((item) => ({
-        ...item,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal,
-      tax: taxAmount,
-      shipping: shippingCost,
-      total: grandTotal,
-      shippingAddress: selectedAddress,
-      paymentMethod: selectedPayment,
-      status: "confirmed",
-    };
+    setOrderSubmitting(true);
+    setOrderError(null);
 
-    // Simulación de persistencia
-    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-    orders.push(order);
-    localStorage.setItem("orders", JSON.stringify(orders));
-    debugger;
-    setIsOrderFinished(true);
-    navigate("/order-confirmation", { state: { order } });
-    clearCart();
+    const orderItems = cartItems.map((item) => ({
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      subtotal: item.product.price * item.quantity,
+    }));
+
+    try {
+      const backendOrder = await createOrder({
+        user: user?.id,
+        products: cartItems.map((item) => ({
+          productId: item.product._id,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
+        address: selectedAddress._id,
+        paymentMethod: selectedPayment._id,
+        totalPrice: grandTotal,
+        shippingCost,
+      });
+
+      const order = {
+        id: backendOrder._id,
+        date: backendOrder.createdAt || new Date().toISOString(),
+        items: orderItems,
+        subtotal,
+        tax: taxAmount,
+        shipping: shippingCost,
+        total: grandTotal,
+        shippingAddress: selectedAddress,
+        paymentMethod: selectedPayment,
+        status: backendOrder.status || "pending",
+      };
+
+      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+      orders.push(order);
+      localStorage.setItem("orders", JSON.stringify(orders));
+
+      setIsOrderFinished(true);
+      clearCart();
+      navigate("/order-confirmation", { state: { order } });
+    } catch (err) {
+      setOrderError(
+        "No se pudo confirmar tu pedido. Verifica tus datos e intenta de nuevo."
+      );
+      setOrderSubmitting(false);
+    }
   };
 
   return (
@@ -385,6 +479,7 @@ export default function Checkout() {
           <SummarySection
             title="1. Dirección de envío"
             selected={selectedAddress}
+            data-testid="checkout-address-section"
             summaryContent={
               <div className="selected-address">
                 <p>{selectedAddress?.name}</p>
@@ -399,6 +494,11 @@ export default function Checkout() {
             }
             onToggle={handleAddressToggle}
           >
+            {addressSubmitError && (
+              <ErrorMessage data-testid="checkout-address-error">
+                {addressSubmitError}
+              </ErrorMessage>
+            )}
             {!showAddressForm && !editingAddress ? (
               <AddressList
                 addresses={addresses}
@@ -421,6 +521,7 @@ export default function Checkout() {
           <SummarySection
             title="2. Método de pago"
             selected={selectedPayment}
+            data-testid="checkout-payment-section"
             summaryContent={
               <div className="selected-payment">
                 <p>{selectedPayment?.alias}</p>
@@ -432,6 +533,11 @@ export default function Checkout() {
             }
             onToggle={handlePaymentToggle}
           >
+            {paymentSubmitError && (
+              <ErrorMessage data-testid="checkout-payment-error">
+                {paymentSubmitError}
+              </ErrorMessage>
+            )}
             {!showPaymentForm && !editingPayment ? (
               <PaymentList
                 payments={payments}
@@ -455,13 +561,14 @@ export default function Checkout() {
             title="3. Revisa tu pedido"
             selected={true}
             isExpanded={true}
+            data-testid="checkout-review-section"
           >
             <CartView />
           </SummarySection>
         </div>
 
         <div className="checkout-right">
-          <div className="checkout-summary">
+          <div className="checkout-summary" data-testid="checkout-order-summary">
             <h3>Resumen de la Orden</h3>
             <div className="summary-details">
               <p>
@@ -482,7 +589,7 @@ export default function Checkout() {
                   {shippingCost === 0 ? "Gratis" : formatMoney(shippingCost)}
                 </p>
                 <hr />
-                <p>
+                <p data-testid="checkout-total">
                   <strong>Total:</strong> {formatMoney(grandTotal)}
                 </p>
               </div>
@@ -493,9 +600,15 @@ export default function Checkout() {
                 ).toLocaleDateString()}
               </p>
             </div>
+            {orderError && (
+              <ErrorMessage data-testid="checkout-order-error">
+                {orderError}
+              </ErrorMessage>
+            )}
             <Button
               className="pay-button"
               disabled={
+                orderSubmitting ||
                 !selectedAddress ||
                 !selectedPayment ||
                 !cartItems ||
@@ -511,8 +624,9 @@ export default function Checkout() {
                   : "Confirmar y realizar el pago"
               }
               onClick={handleCreateOrder}
+              data-testid="checkout-confirm-button"
             >
-              Confirmar y Pagar
+              {orderSubmitting ? "Procesando..." : "Confirmar y Pagar"}
             </Button>
           </div>
         </div>

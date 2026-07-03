@@ -19,7 +19,7 @@ export function CartProvider({ children }) {
   return readLocalJSON(CART_STORAGE_KEY) ?? [];
 });
 
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -35,7 +35,6 @@ export function CartProvider({ children }) {
     let cancelled = false;
 
     (async () => {
-      const localItems = readLocalJSON(CART_STORAGE_KEY) ?? [];
       try {
         const serverCart = await getCartByUser(user.id);
         if (cancelled) return;
@@ -79,7 +78,10 @@ export function CartProvider({ children }) {
   };
 
   const updateQuantity = async (itemId, quantity) => {
-    if (quantity < 1) removeItem(itemId);
+    if (quantity < 1) {
+      removeItem(itemId);
+      return;
+    }
 
     const nextItems = items.map((item) =>
       item.product._id === itemId ? { ...item, quantity } : item,

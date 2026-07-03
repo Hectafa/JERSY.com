@@ -8,6 +8,7 @@ const SummarySection = ({
   isExpanded,
   onToggle,
   children,
+  "data-testid": testId,
 }) => {
   const handleToggle = (e) => {
     // Evitar toggle si se hace click en el botón
@@ -20,7 +21,10 @@ const SummarySection = ({
   };
 
   return (
-    <div className={`summary-section ${isExpanded ? "expanded" : ""}`}>
+    <div
+      className={`summary-section ${isExpanded ? "expanded" : ""}`}
+      data-testid={testId}
+    >
       <div className="summary-header" onClick={handleToggle}>
         <div className="summary-title">
           <h3>{title}</h3>

@@ -1,0 +1,14 @@
+{
+  "_comment": "Plantilla de forma para un usuario de prueba. El email real se genera en tiempo de ejecución (ver cypress/utils/testData.js) para evitar colisiones entre corridas; este fixture documenta la forma esperada por POST /api/auth/register.",
+  "template": {
+    "name": "Usuario Cypress",
+    "email": "cypress-<timestamp>@example.com",
+    "password": "Test1234!",
+    "phone": "5512345678"
+  },
+  "invalid": {
+    "malformedEmail": "no-es-un-correo",
+    "shortPassword": "123",
+    "mismatchedPassword": "OtraClave1"
+  }
+}

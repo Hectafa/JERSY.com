@@ -7,6 +7,7 @@ const AddressItem = ({ address, isSelected, onSelect, onEdit, onDelete }) => {
       className={`address-item ${isSelected ? "selected" : ""} ${
         address.default ? "default" : ""
       }`}
+      data-testid={`address-item-${address._id}`}
     >
       <div className="address-content">
         <h4>{address.name}</h4>
@@ -21,7 +22,11 @@ const AddressItem = ({ address, isSelected, onSelect, onEdit, onDelete }) => {
         )}
       </div>
       <div className="address-actions">
-        <Button onClick={() => onSelect(address)} disabled={isSelected}>
+        <Button
+          onClick={() => onSelect(address)}
+          disabled={isSelected}
+          data-testid={`address-select-${address._id}`}
+        >
           {isSelected ? "Seleccionada" : "Seleccionar"}
         </Button>
         <Button variant="secondary" onClick={() => onEdit(address)}>

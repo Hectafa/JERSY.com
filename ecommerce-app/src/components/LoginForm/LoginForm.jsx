@@ -61,7 +61,11 @@ export default function LoginForm() {
             Cuenta creada exitosamente. Inicia sesión con tu email y contraseña
           </div>
         )}
-        <form className="login-form" onSubmit={onSubmit}>
+        <form
+          className="login-form"
+          onSubmit={onSubmit}
+          data-testid="login-form"
+        >
           <div className="form-group">
             <Input
               id="email"
@@ -71,6 +75,7 @@ export default function LoginForm() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="tu@email.com"
               required
+              data-testid="login-email-input"
             />
           </div>
           <div className="form-group">
@@ -82,19 +87,31 @@ export default function LoginForm() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Ingresa tu contraseña"
               required
+              data-testid="login-password-input"
             />
           </div>
 
-          {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+          {errorMessage && (
+            <ErrorMessage data-testid="login-error-message">
+              {errorMessage}
+            </ErrorMessage>
+          )}
           {errorKind && <RegisterErrorMessage kind={errorKind} />}
 
-          <Button disabled={loading} type="submit" variant="primary">
+          <Button
+            disabled={loading}
+            type="submit"
+            variant="primary"
+            data-testid="login-submit-button"
+          >
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </Button>
         </form>
         <div className="login-footer">
           <span>¿No tienes cuenta?</span>
-          <Link to="/register">Regístrate</Link>
+          <Link to="/register" data-testid="login-register-link">
+            Regístrate
+          </Link>
         </div>
       </div>
     </div>

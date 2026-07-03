@@ -12,3 +12,9 @@ yarn-error.log*
 *.log
 .vscode/
 .idea/
+
+# Cypress
+ecommerce-app/cypress/videos/
+ecommerce-app/cypress/screenshots/
+ecommerce-app/cypress/downloads/
+ecommerce-app/cypress.env.json

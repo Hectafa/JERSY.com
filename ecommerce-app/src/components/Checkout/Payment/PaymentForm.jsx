@@ -60,7 +60,11 @@ const PaymentForm = ({
   };
 
   return (
-    <form className="payment-form" onSubmit={handleSubmit}>
+    <form
+      className="payment-form"
+      onSubmit={handleSubmit}
+      data-testid="checkout-payment-form"
+    >
       <h3>{isEdit ? "Editar Método de Pago" : "Nuevo Método de Pago"}</h3>
 
       <Input
@@ -69,6 +73,7 @@ const PaymentForm = ({
         value={formData.alias}
         onChange={handleChange}
         required
+        data-testid="checkout-payment-alias-input"
       />
 
       <Input
@@ -79,6 +84,7 @@ const PaymentForm = ({
         pattern="[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}"
         placeHolder="1234-5678-9012-3456"
         required
+        data-testid="checkout-payment-card-number-input"
       />
 
       <Input
@@ -87,6 +93,7 @@ const PaymentForm = ({
         value={formData.placeHolder}
         onChange={handleChange}
         required
+        data-testid="checkout-payment-holder-input"
       />
 
       <div className="form-row">
@@ -98,6 +105,7 @@ const PaymentForm = ({
           placeHolder="MM/YY"
           pattern="[0-9]{2}/[0-9]{2}"
           required
+          data-testid="checkout-payment-expiry-input"
         />
 
         <Input
@@ -109,6 +117,7 @@ const PaymentForm = ({
           maxLength="4"
           pattern="[0-9]{3,4}"
           required
+          data-testid="checkout-payment-cvv-input"
         />
       </div>
 
@@ -126,7 +135,7 @@ const PaymentForm = ({
       </div>
 
       <div className="form-actions">
-        <Button type="submit">
+        <Button type="submit" data-testid="checkout-payment-submit-button">
           {isEdit ? "Guardar Cambios" : "Agregar Método de Pago"}
         </Button>
         {onCancel && (

@@ -1,5 +1,9 @@
 import "./ErrorMessage.css";
 
-export default function ErrorMessage({ children }) {
-  return <div className="error-message">{children}</div>;
+export default function ErrorMessage({ children, "data-testid": testId }) {
+  return (
+    <div className="error-message" data-testid={testId || "error-message"}>
+      {children}
+    </div>
+  );
 }

@@ -9,15 +9,21 @@ const AddressForm = ({
   initialValues = {},
   isEdit = false,
 }) => {
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     name: "",
     address1: "",
     address2: "",
+    state: "",
+    phone: "",
     postalCode: "",
     city: "",
     country: "",
     reference: "",
     default: false,
+  };
+
+  const [formData, setFormData] = useState({
+    ...emptyForm,
     ...initialValues,
   });
 
@@ -25,17 +31,11 @@ const AddressForm = ({
   useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
       setFormData({
-        name: "",
-        address1: "",
-        address2: "",
-        postalCode: "",
-        city: "",
-        country: "",
-        reference: "",
-        default: false,
+        ...emptyForm,
         ...initialValues,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValues]);
 
   const handleChange = (e) => {
@@ -52,21 +52,16 @@ const AddressForm = ({
 
     // Resetear formulario solo si es nuevo (no edición)
     if (!isEdit) {
-      setFormData({
-        name: "",
-        address1: "",
-        address2: "",
-        postalCode: "",
-        city: "",
-        country: "",
-        reference: "",
-        default: false,
-      });
+      setFormData(emptyForm);
     }
   };
 
   return (
-    <form className="address-form" onSubmit={handleSubmit}>
+    <form
+      className="address-form"
+      onSubmit={handleSubmit}
+      data-testid="checkout-address-form"
+    >
       <h3>{isEdit ? "Editar Dirección" : "Nueva Dirección"}</h3>
 
       <Input
@@ -75,6 +70,7 @@ const AddressForm = ({
         value={formData.name}
         onChange={handleChange}
         required
+        data-testid="checkout-address-name-input"
       />
 
       <Input
@@ -83,6 +79,7 @@ const AddressForm = ({
         value={formData.address1}
         onChange={handleChange}
         required
+        data-testid="checkout-address-line1-input"
       />
 
       <Input
@@ -90,14 +87,7 @@ const AddressForm = ({
         name="address2"
         value={formData.address2}
         onChange={handleChange}
-      />
-
-      <Input
-        label="Código Postal"
-        name="postalCode"
-        value={formData.postalCode}
-        onChange={handleChange}
-        required
+        data-testid="checkout-address-line2-input"
       />
 
       <Input
@@ -106,6 +96,26 @@ const AddressForm = ({
         value={formData.city}
         onChange={handleChange}
         required
+        data-testid="checkout-address-city-input"
+      />
+
+      <Input
+        label="Estado"
+        name="state"
+        value={formData.state}
+        onChange={handleChange}
+        required
+        data-testid="checkout-address-state-input"
+      />
+
+      <Input
+        label="Código Postal"
+        name="postalCode"
+        value={formData.postalCode}
+        onChange={handleChange}
+        required
+        pattern="[0-9]{5}"
+        data-testid="checkout-address-postal-code-input"
       />
 
       <Input
@@ -114,6 +124,17 @@ const AddressForm = ({
         value={formData.country}
         onChange={handleChange}
         required
+        data-testid="checkout-address-country-input"
+      />
+
+      <Input
+        label="Teléfono"
+        name="phone"
+        type="tel"
+        value={formData.phone}
+        onChange={handleChange}
+        required
+        data-testid="checkout-address-phone-input"
       />
 
       <Input
@@ -121,6 +142,7 @@ const AddressForm = ({
         name="reference"
         value={formData.reference}
         onChange={handleChange}
+        data-testid="checkout-address-reference-input"
       />
 
       <div className="form-checkbox">
@@ -137,7 +159,7 @@ const AddressForm = ({
       </div>
 
       <div className="form-actions">
-        <Button type="submit">
+        <Button type="submit" data-testid="checkout-address-submit-button">
           {isEdit ? "Guardar Cambios" : "Agregar Dirección"}
         </Button>
         {onCancel && (

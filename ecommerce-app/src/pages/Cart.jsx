@@ -12,7 +12,7 @@ export default function Cart() {
 
   if (items?.length === 0) {
     return (
-      <div className="cart-empty">
+      <div className="cart-empty" data-testid="cart-empty">
         <Icon name="cart" size={100}></Icon>
         <h2>Tu carrito está vacío</h2>
         <p>Agrega algunos productos para empezar a comprar</p>
@@ -52,7 +52,7 @@ export default function Cart() {
         <div className="cart-summary">
           <div className="cart-total">
             <span className="cart-total-subtitle">Total a pagar</span>
-            <h2>${total.toFixed(2)}</h2>
+            <h2 data-testid="cart-subtotal">${total.toFixed(2)}</h2>
           </div>
           <div className="cart-actions">
             <Button
@@ -65,6 +65,7 @@ export default function Cart() {
                   ? "Agrega productos al carrito para continuar"
                   : "Proceder al pago"
               }
+              data-testid="cart-checkout-button"
             >
               <Icon name="creditCard" size={20} />
               <span>Proceder al pago</span>

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { searchProducts } from "../../services/productsService";
 import List from "../List/List";
 import "./SearchResultsList.css";
 
 export default function SearchResultsList() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState(null);
@@ -43,16 +43,6 @@ export default function SearchResultsList() {
   }, [query, sort, order]);
 
   const hasQuery = query.length > 0;
-  const showNoResults = hasQuery && !loading && products.length === 0;
-
-  const handleQueryChange = (event) => {
-    const value = event.target.value;
-    if (!value.trim()) {
-      setSearchParams({});
-      return;
-    }
-    setSearchParams({ q: value });
-  };
 
   return (
     <div className="search-results-fullwidth">

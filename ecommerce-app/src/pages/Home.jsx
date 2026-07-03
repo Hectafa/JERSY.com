@@ -10,7 +10,7 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState(null);
+  const [, setPagination] = useState(null);
 
   useEffect(() => {
     let cancelled = false;

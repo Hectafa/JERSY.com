@@ -29,7 +29,7 @@ export default function ProductCard({ product, orientation = "vertical" }) {
   const cardClass = `product-card product-card--${orientation}`;
 
   return (
-    <div className={cardClass}>
+    <div className={cardClass} data-testid={`product-card-${product._id}`}>
       <Link to={productLink} className="product-card-image-link">
         <img
           src={imagesUrl ? imagesUrl[0] : "/img/products/placeholder.svg"}
@@ -73,6 +73,7 @@ export default function ProductCard({ product, orientation = "vertical" }) {
           size="sm"
           disabled={stock === 0}
           onClick={handleAddToCart}
+          data-testid={`add-to-cart-button-${product._id}`}
         >
           Agregar al carrito
         </Button>

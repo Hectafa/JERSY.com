@@ -6,7 +6,6 @@ import { getProductById } from "../../services/productsService";
 import Badge from "../common/Badge";
 import Button from "../common/Button";
 import ErrorMessage from "../common/ErrorMessage/ErrorMessage";
-import Loading from "../common/Loading/Loading";
 import "./ProductDetails.css";
 
 export default function ProductDetails({ productId }) {
@@ -101,7 +100,7 @@ export default function ProductDetails({ productId }) {
   const stockLabel = stock > 0 ? "En stock" : "Agotado";
 
   return (
-    <div className="product-details-container">
+    <div className="product-details-container" data-testid="product-detail">
       <Breadcrumb
         items={[
           { label: "Inicio", to: "/" },
@@ -142,10 +141,15 @@ export default function ProductDetails({ productId }) {
               size="lg"
               disabled={stock === 0}
               onClick={handleAddToCart}
+              data-testid="add-to-cart-button"
             >
               Agregar al carrito
             </Button>
-            <Link to="/cart" className="btn btn-outline btn-lg">
+            <Link
+              to="/cart"
+              className="btn btn-outline btn-lg"
+              data-testid="go-to-cart-link"
+            >
               Ver carrito
             </Link>
           </div>

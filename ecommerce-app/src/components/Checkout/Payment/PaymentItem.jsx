@@ -12,6 +12,7 @@ const PaymentItem = ({ payment, isSelected, onSelect, onEdit, onDelete }) => {
       className={`payment-item ${isSelected ? "selected" : ""} ${
         payment.isDefault ? "isDefault" : ""
       }`}
+      data-testid={`payment-item-${payment._id}`}
     >
       <div className="payment-content">
         <h4>{payment.alias}</h4>
@@ -23,7 +24,11 @@ const PaymentItem = ({ payment, isSelected, onSelect, onEdit, onDelete }) => {
         )}
       </div>
       <div className="payment-actions">
-        <Button onClick={() => onSelect(payment)} disabled={isSelected}>
+        <Button
+          onClick={() => onSelect(payment)}
+          disabled={isSelected}
+          data-testid={`payment-select-${payment._id}`}
+        >
           {isSelected ? "Seleccionada" : "Seleccionar"}
         </Button>
         <Button variant="secondary" onClick={() => onEdit(payment)}>
