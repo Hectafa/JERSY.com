@@ -95,7 +95,7 @@ export default function ProductDetails({ productId }) {
 
   if (!product) return null;
 
-  const { name, description, price, stock, imagesUrl, category } = product;
+  const { name, description, price, stock, imageURL, category } = product;
   const stockBadge = stock > 0 ? "success" : "error";
   const stockLabel = stock > 0 ? "En stock" : "Agotado";
 
@@ -113,7 +113,7 @@ export default function ProductDetails({ productId }) {
       <div className="product-details-main">
         <div className="product-details-image">
           <img
-            src={imagesUrl?.[0] || "/img/products/placeholder.svg"}
+            src={imageURL || "/img/products/placeholder.svg"}
             alt={name}
             onError={(event) => {
               event.target.src = "/img/products/placeholder.svg";

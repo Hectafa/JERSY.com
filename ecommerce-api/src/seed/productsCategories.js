@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import Category from "../models/category.js";
-import Product from "../models/product.js";
+import Category from "../models/Category.js";
+import Product from "../models/Product.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -68,7 +68,7 @@ async function seed() {
       description: "El último smartphone de Apple con chip A17 Pro.",
       price: 1299,
       stock: 10,
-      imagesUrl: ["./img/products/iPhone 14 Pro.jpg"],
+      imageURL: "./img/products/iPhone 14 Pro.jpg",
       category: subCatDocs["iPhone"]._id,
     },
     {
@@ -76,7 +76,7 @@ async function seed() {
       description: "Smartphone premium con cámara de 200MP.",
       price: 1199,
       stock: 15,
-      imagesUrl: ["./img/products/Samsung Galaxy S23.jpg"],
+      imageURL: "./img/products/Samsung Galaxy S23.jpg",
       category: subCatDocs["Android"]._id,
     },
     {
@@ -84,7 +84,7 @@ async function seed() {
       description: "Laptop profesional con chip Apple M3.",
       price: 2499,
       stock: 8,
-      imagesUrl: ["./img/products/MacBook Air M2.jpg"],
+      imageURL: "./img/products/MacBook Air M2.jpg",
       category: subCatDocs["MacBook"]._id,
     },
     {
@@ -92,7 +92,7 @@ async function seed() {
       description: "Laptop potente para trabajo y gaming.",
       price: 1899,
       stock: 12,
-      imagesUrl: ["./img/products/Dell XPS 13.jpeg"],
+      imageURL: "./img/products/Dell XPS 13.jpeg",
       category: subCatDocs["Gaming"]._id,
     },
     {
@@ -100,7 +100,7 @@ async function seed() {
       description: "Smartwatch avanzado con sensores de salud.",
       price: 499,
       stock: 25,
-      imagesUrl: ["./img/products/applewatch9.png"],
+      imageURL: "./img/products/applewatch9.png",
       category: subCatDocs["Smartwatch"]._id,
     },
     {
@@ -108,7 +108,7 @@ async function seed() {
       description: "Audífonos inalámbricos con cancelación de ruido.",
       price: 399,
       stock: 30,
-      imagesUrl: ["./img/products/Sony WH-1000XM5.avif"],
+      imageURL: "./img/products/Sony WH-1000XM5.avif",
       category: subCatDocs["Auriculares"]._id,
     },
     {
@@ -116,7 +116,7 @@ async function seed() {
       description: "Laptop gamer con RTX 4080.",
       price: 2599,
       stock: 7,
-      imagesUrl: ["./img/products/Lenovo Legion 7.avif"],
+      imageURL: "./img/products/Lenovo Legion 7.avif",
       category: subCatDocs["Gaming"]._id,
     },
     {
@@ -124,7 +124,7 @@ async function seed() {
       description: "Smartphone con Android puro y excelente cámara.",
       price: 899,
       stock: 18,
-      imagesUrl: ["./img/products/Google Pixel 7.jpg"],
+      imageURL: "./img/products/Google Pixel 7.jpg",
       category: subCatDocs["Android"]._id,
     },
     {
@@ -132,7 +132,7 @@ async function seed() {
       description: "Auriculares inalámbricos con audio espacial.",
       price: 299,
       stock: 40,
-      imagesUrl: ["./img/products/airpodspro2.jpeg"],
+      imageURL: "./img/products/airpodspro2.jpeg",
       category: subCatDocs["Auriculares"]._id,
     },
   ];

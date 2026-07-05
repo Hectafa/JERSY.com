@@ -7,6 +7,15 @@ const addressSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    // NUEVO (fix): el frontend (Checkout.jsx) y addressController ya
+    // enviaban/asignaban `name` (la etiqueta de la dirección, ej. "Casa"),
+    // pero el schema no lo declaraba — Mongoose lo descartaba en silencio al
+    // guardar. El frontend lo conservaba localmente como workaround (ver
+    // comentario en Checkout.jsx). Ahora se persiste de verdad.
+    name: {
+      type: String,
+      trim: true,
+    },
     address: {
       type: String,
       required: true,

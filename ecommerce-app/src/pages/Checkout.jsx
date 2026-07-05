@@ -339,7 +339,11 @@ export default function Checkout() {
     const payload = {
       user: user?.id,
       type: "credit_card",
-      cardNumber: formData.cardNumber,
+      // FIX: PaymentForm pide el número con guiones ("1234-5678-9012-3456",
+      // 19 caracteres) pero el validador del backend (updatePaymentValidation
+      // en paymentMethodRoutes.js) exige máximo 16 caracteres. Se envían solo
+      // los dígitos reales de la tarjeta, sin el formato visual.
+      cardNumber: formData.cardNumber.replace(/\D/g, ""),
       cardHolderName: formData.placeHolder,
       expiryDate: formData.expiryDate,
       cvv: formData.cvv,

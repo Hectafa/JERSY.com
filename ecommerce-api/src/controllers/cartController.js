@@ -1,4 +1,31 @@
 import Cart from "../models/Cart.js";
+import Product from "../models/Product.js";
+
+// NUEVO (fix): ni createCart ni updateCart validaban product.stock contra la
+// cantidad solicitada — se podía agregar/actualizar una cantidad mayor al
+// inventario real. Este helper busca los productos reales y devuelve el
+// primer error de stock insuficiente, si lo hay.
+async function validateStock(products) {
+  const ids = products.map((p) => p.product);
+  const dbProducts = await Product.find({ _id: { $in: ids } });
+  const dbProductsById = new Map(dbProducts.map((p) => [p._id.toString(), p]));
+
+  for (const item of products) {
+    const dbProduct = dbProductsById.get(item.product.toString());
+    if (!dbProduct) {
+      return { ok: false, status: 404, error: `Product ${item.product} not found` };
+    }
+    if (item.quantity > dbProduct.stock) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Insufficient stock for product ${dbProduct.name}: requested ${item.quantity}, available ${dbProduct.stock}`,
+      };
+    }
+  }
+
+  return { ok: true };
+}
 
 async function getCarts(req, res, next) {
   try {
@@ -63,6 +90,12 @@ async function createCart(req, res, next) {
       }
     }
 
+    // NUEVO (fix): valida que la cantidad solicitada no supere el stock real.
+    const stockCheck = await validateStock(products);
+    if (!stockCheck.ok) {
+      return res.status(stockCheck.status).json({ error: stockCheck.error });
+    }
+
     const newCart = await Cart.create({
       user,
       products,
@@ -98,6 +131,12 @@ async function updateCart(req, res, next) {
           error: "Each product must have product ID and quantity > = 1",
         });
       }
+    }
+
+    // NUEVO (fix): mismo chequeo de stock que en createCart.
+    const stockCheck = await validateStock(products);
+    if (!stockCheck.ok) {
+      return res.status(stockCheck.status).json({ error: stockCheck.error });
     }
 
     const updatedCart = await Cart.findByIdAndUpdate(

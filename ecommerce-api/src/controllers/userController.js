@@ -49,13 +49,24 @@ const createUser = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, role } = req.body;
-    const hashPassword = await generatePassword(password);
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { name, email, password: hashPassword, role },
-      { new: true },
-    ).select("-password");
+    // FIX (bug real, 500 siempre): antes decía
+    //   const { name, email, role } = req.body;
+    //   const hashPassword = await generatePassword(password);
+    // `password` no estaba destructurada, así que `generatePassword(password)`
+    // lanzaba un ReferenceError en cada request a esta ruta. Ahora se
+    // destructura `password` y solo se hashea/actualiza si el cliente
+    // realmente envió una contraseña nueva.
+    const { name, email, password, role } = req.body;
+
+    const update = { name, email, role };
+    if (password) {
+      update.password = await generatePassword(password);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(id, update, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }

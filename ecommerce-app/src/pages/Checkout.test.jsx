@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import Checkout from "./Checkout";
@@ -11,6 +11,7 @@ import {
 import {
   getPaymentMethods,
   getDefaultPaymentMethod,
+  createPaymentMethod,
 } from "../services/paymentService";
 import { createOrder } from "../services/orderService";
 import * as cartService from "../services/cartService";
@@ -261,6 +262,37 @@ describe("Checkout", () => {
     });
 
     expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
+  // NUEVO: cubre el fix del mismatch de cardNumber (PaymentForm exige el
+  // formato con guiones "1234-5678-9012-3456", 19 caracteres, pero
+  // updatePaymentValidation en el backend rechaza más de 16). Ahora
+  // Checkout.jsx limpia los guiones antes de llamar a createPaymentMethod.
+  test("envía cardNumber sin guiones al agregar un nuevo método de pago", async () => {
+    seedCart([{ product: PRODUCT, quantity: 1 }]);
+    getShippingAddresses.mockResolvedValue([ADDRESS]);
+    getDefaultShippingAddress.mockResolvedValue(ADDRESS);
+    getPaymentMethods.mockResolvedValue([PAYMENT]);
+    getDefaultPaymentMethod.mockResolvedValue(PAYMENT);
+    createPaymentMethod.mockResolvedValue({ _id: "pay-new", isDefault: false });
+
+    renderCheckout();
+
+    const paymentSection = await screen.findByTestId("checkout-payment-section");
+    userEvent.click(within(paymentSection).getByText("Cambiar"));
+    userEvent.click(await screen.findByText("Agregar Nueva Tarjeta"));
+
+    userEvent.type(screen.getByTestId("checkout-payment-alias-input"), "Tarjeta nueva");
+    userEvent.type(screen.getByTestId("checkout-payment-card-number-input"), "1234-5678-9012-3456");
+    userEvent.type(screen.getByTestId("checkout-payment-holder-input"), "Juan Pérez");
+    userEvent.type(screen.getByTestId("checkout-payment-expiry-input"), "12/28");
+    userEvent.type(screen.getByTestId("checkout-payment-cvv-input"), "123");
+    userEvent.click(screen.getByTestId("checkout-payment-submit-button"));
+
+    await waitFor(() => expect(createPaymentMethod).toHaveBeenCalledTimes(1));
+    expect(createPaymentMethod).toHaveBeenCalledWith(
+      expect.objectContaining({ cardNumber: "1234567890123456" }),
+    );
   });
 
   test("redirige a /cart si se entra al checkout con el carrito vacío", async () => {
