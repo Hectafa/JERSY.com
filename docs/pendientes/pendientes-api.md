@@ -4,27 +4,7 @@
 
 ## 1. Defectos reales confirmados, todavía sin corregir
 
-### 1.1 `addressRoutes.js` no tiene ninguna validación de entrada
-A diferencia de **todas** las demás rutas de recursos (`cartRoutes.js`, `orderRoutes.js`, `productRoutes.js`, `userRoutes.js`), `src/routes/addressRoutes.js` no usa `express-validator` en absoluto — ni siquiera valida que `:addressId` sea un ObjectId válido.
-
-```js
-router.get("/addresses/:addressId", authMiddleware, getAddressById);
-router.put("/addresses/:addressId", authMiddleware, updateAddress);
-router.delete("/addresses/:addressId", authMiddleware, deleteAddress);
-```
-
-**Consecuencia real**: pedir `GET /api/addresses/no-es-un-id` no da un 422 limpio — Mongoose lanza un `CastError` al intentar convertir `"no-es-un-id"` a ObjectId, que el `try/catch` del controlador atrapa y pasa a `errorHandler`, respondiendo **500 genérico** en vez de un error de validación intencional.
-
-**Fix sugerido**: crear `src/validators/addressValidators.js` (mismo patrón que `userValidators.js`/`cartValidators.js`) con `addressIdValidation` (`param("addressId").isMongoId()`) y validación básica del body (`address`, `city`, `state`, `postalCode`, `country`, `phone` no vacíos), conectarlo en `addressRoutes.js` con el middleware `validate` existente.
-
-### 1.2 `createPaymentValidation` no valida `cardNumber` (solo `updatePaymentValidation` lo hace)
-En `paymentMethodRoutes.js`, la validación de longitud de `cardNumber` (`isLength({ max: 16 })`) solo existe en `updatePaymentValidation` (PUT). `createPaymentValidation` (POST, creación de un método de pago nuevo) no valida `cardNumber` en absoluto — se puede crear un método de pago con un número de cualquier longitud.
-
-Nota: el mismatch de longitud entre frontend (19 caracteres con guiones) y backend ya se corrigió del lado del frontend (`Checkout.jsx` limpia los guiones antes de enviar), así que hoy no es explotable desde la UI real. Pero la inconsistencia en el backend sigue ahí — un cliente que llame a la API directamente (Postman, otro frontend, etc.) puede crear un método de pago con un `cardNumber` inválido.
-
-**Fix sugerido**: agregar la misma regla `body("cardNumber").optional().isLength({ max: 16 })` a `createPaymentValidation`.
-
-### 1.3 `addProductToCart` es código muerto
+### 1.1 `addProductToCart` es código muerto
 `cartController.js` exporta `addProductToCart`, pero ninguna ruta en `cartRoutes.js` la usa — no es alcanzable por HTTP. Además, tiene un bug propio si алguna vez se conecta: en la línea `await cart.populate("products.productId")`, el campo real del schema es `products.product` (no `products.productId`), así que ese populate no haría nada.
 
 **Fix sugerido**: decidir si esta función se expone como ruta (por ejemplo `POST /api/cart/add`, que parece ser su propósito original: agregar un producto incrementando cantidad si ya existe) o si se elimina por completo. Si se expone, corregir también el populate y agregarle el mismo `validateStock` que ya tienen `createCart`/`updateCart`.

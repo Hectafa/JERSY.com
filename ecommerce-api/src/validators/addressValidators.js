@@ -1,7 +1,7 @@
 import {param, body} from "express-validator";
 
 export const addressIdValidation = [
-    param("id")
+    param("addressId")
         .isMongoId()
         .withMessage("Address ID must be a valid MongoDB ObjectId"),
 ];
@@ -40,7 +40,7 @@ export const createAddressValidation = [
 ];
 
 export const updateAddressValidation = [
-    param("id")
+    param("addressId")
         .isMongoId()
         .withMessage("Address ID must be a valid MongoDB ObjectId"),
     body("name")
@@ -82,7 +82,7 @@ export const updateAddressValidation = [
 ];
 
 export const deleteAddressValidation = [
-    param("id")
+    param("addressId")
         .isMongoId()
         .withMessage("Address ID must be a valid MongoDB ObjectId"),
 ];

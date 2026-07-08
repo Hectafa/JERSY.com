@@ -18,11 +18,13 @@ export const createPaymentValidation = [
         .isIn([
             "credit_card",
             "debit_card",
+            "paypal",
+            "bank_transfer",
+            "cash_on_delivery",
         ])
         .withMessage("Invalid payment type"),
     body("cardNumber")
-        .notEmpty()
-        .withMessage("Card number is required")
+        .optional()
         .isLength({ max: 16 })
         .withMessage("Card number must be at most 16 characters"),
     body("isDefault")
