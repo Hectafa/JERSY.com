@@ -30,6 +30,23 @@ export const createCartValidation = [
     .withMessage("Quantity must be an integer greater than or equal to 1"),
 ];
 
+export const addToCartValidation = [
+  body("userId")
+    .notEmpty()
+    .withMessage("User ID is required")
+    .isMongoId()
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
+  body("productId")
+    .notEmpty()
+    .withMessage("Product ID is required")
+    .isMongoId()
+    .withMessage("Product ID must be a valid MongoDB ObjectId"),
+  body("quantity")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be an integer greater than or equal to 1"),
+];
+
 export const putCartValidation = [
   param("id")
     .isMongoId()

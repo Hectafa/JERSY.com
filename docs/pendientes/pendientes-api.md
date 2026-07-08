@@ -2,13 +2,6 @@
 
 > Generado el 2026-07-05 a partir del estado real del código después de las rondas de corrección anteriores (ver `docs/testing/test-matrix.md` para el historial completo de qué ya se arregló y con qué test se confirmó). Esta lista es específica del **backend**; al final se incluye una sección corta de piezas del frontend que dependen de endpoints de esta API y quedaron sin construir, para no perder el contexto completo.
 
-## 1. Defectos reales confirmados, todavía sin corregir
-
-### 1.1 `addProductToCart` es código muerto
-`cartController.js` exporta `addProductToCart`, pero ninguna ruta en `cartRoutes.js` la usa — no es alcanzable por HTTP. Además, tiene un bug propio si алguna vez se conecta: en la línea `await cart.populate("products.productId")`, el campo real del schema es `products.product` (no `products.productId`), así que ese populate no haría nada.
-
-**Fix sugerido**: decidir si esta función se expone como ruta (por ejemplo `POST /api/cart/add`, que parece ser su propósito original: agregar un producto incrementando cantidad si ya existe) o si se elimina por completo. Si se expone, corregir también el populate y agregarle el mismo `validateStock` que ya tienen `createCart`/`updateCart`.
-
 ## 2. Huecos de cobertura de test (no son bugs conocidos, pero no están verificados)
 
 | Área | Qué falta | Por qué importa |

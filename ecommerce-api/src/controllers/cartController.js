@@ -176,27 +176,37 @@ async function addProductToCart(req, res, next) {
   try {
     const { userId, productId, quantity = 1 } = req.body;
     let cart = await Cart.findOne({ user: userId });
+    const existingProductIndex = cart
+      ? cart.products.findIndex((item) => item.product.toString() === productId)
+      : -1;
+    const finalQuantity =
+      existingProductIndex >= 0
+        ? cart.products[existingProductIndex].quantity + quantity
+        : quantity;
+
+    // NUEVO (fix): mismo chequeo de stock que en createCart/updateCart, pero
+    // contra la cantidad final (existente + agregada), no solo la agregada.
+    const stockCheck = await validateStock([
+      { product: productId, quantity: finalQuantity },
+    ]);
+    if (!stockCheck.ok) {
+      return res.status(stockCheck.status).json({ error: stockCheck.error });
+    }
 
     if (!cart) {
       cart = new Cart({
         user: userId,
         products: [{ product: productId, quantity }],
       });
+    } else if (existingProductIndex >= 0) {
+      cart.products[existingProductIndex].quantity = finalQuantity;
     } else {
-      const existingProductIndex = cart.products.findIndex(
-        (item) => item.product.toString() === productId,
-      );
-
-      if (existingProductIndex >= 0) {
-        cart.products[existingProductIndex].quantity += quantity;
-      } else {
-        cart.products.push({ product: productId, quantity });
-      }
+      cart.products.push({ product: productId, quantity });
     }
 
     await cart.save();
     await cart.populate("user");
-    await cart.populate("products.productId");
+    await cart.populate("products.product");
 
     res.json(cart);
   } catch (error) {

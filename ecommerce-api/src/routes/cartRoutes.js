@@ -6,6 +6,7 @@ import {
   createCart,
   updateCart,
   deleteCart,
+  addProductToCart,
 } from "../controllers/cartController.js";
 import validate from "../middlewares/validation.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
@@ -14,6 +15,7 @@ import {
   cartIdValidation,
   userIdValidation,
   createCartValidation,
+  addToCartValidation,
   putCartValidation,
 } from "../validators/cartValidators.js";
 
@@ -44,6 +46,14 @@ router.post(
   createCartValidation,
   validate,
   createCart,
+);
+
+router.post(
+  "/cart/add",
+  authMiddleware,
+  addToCartValidation,
+  validate,
+  addProductToCart,
 );
 
 router.put(
