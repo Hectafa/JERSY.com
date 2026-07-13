@@ -1,4 +1,5 @@
 
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../common/Button";
 import "./ProfileCard.css";
@@ -8,26 +9,30 @@ const ROLE_COLORS = {
   customer: "#22c55e",
 };
 
-const ROLE_ACTIONS = {
-  admin: [
-    { label: "Editar Perfil", action: () => {} },
-    { label: "Cambiar contraseña", action: () => {} },
-    { label: "Ver todos los pedidos", action: () => {} },
-    { label: "Panel de administración", action: () => {} },
-  ],
-  customer: [
-    { label: "Editar Perfil", action: () => {} },
-    { label: "Cambiar contraseña", action: () => {} },
-    { label: "Ver mis pedidos", action: () => {} },
-  ],
-};
+function buildRoleActions(navigate) {
+  return {
+    admin: [
+      { label: "Editar Perfil", action: () => navigate("/profile/edit") },
+      { label: "Cambiar contraseña", action: () => navigate("/profile/change-password") },
+      { label: "Ver todos los pedidos", action: () => navigate("/orders") },
+      // Fuera de alcance por ahora: no existe página de panel de administración.
+      { label: "Panel de administración", action: () => {} },
+    ],
+    customer: [
+      { label: "Editar Perfil", action: () => navigate("/profile/edit") },
+      { label: "Cambiar contraseña", action: () => navigate("/profile/change-password") },
+      { label: "Ver mis pedidos", action: () => navigate("/orders") },
+    ],
+  };
+}
 
 export default function ProfileCard({ user: userProp }) {
   const {user: contextUser} = useAuth();
+  const navigate = useNavigate();
   const currentUser = userProp || contextUser;
 
   const role = currentUser.role || "guest";
-  const actions = ROLE_ACTIONS[role] || [];
+  const actions = buildRoleActions(navigate)[role] || [];
 
   return (
     <div className="profile-container">

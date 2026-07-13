@@ -18,6 +18,11 @@ const getUsers = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const isOwner = req.user.userId === id;
+    const isAdminUser = req.user.role === "admin";
+    if (!isOwner && !isAdminUser) {
+      return res.status(403).json({ message: "Unauthorized to view this user" });
+    }
     const user = await User.findById(id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -57,9 +62,14 @@ const updateUser = async (req, res, next) => {
     // destructura `password` y solo se hashea/actualiza si el cliente
     // realmente envió una contraseña nueva.
     const { name, email, password, role } = req.body;
+    const isOwner = req.user.userId === id;
+    const isAdminUser = req.user.role === "admin";
 
-    const update = { name, email, role };
-    if (password) {
+    if (!isOwner && !isAdminUser) {
+      return res.status(403).json({ message: "Unauthorized to update this user" });
+    }
+    const update = isAdminUser ? { name, email, role } : { name, email };
+    if (isAdminUser && password) {
       update.password = await generatePassword(password);
     }
 
@@ -71,6 +81,34 @@ const updateUser = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json(updatedUser);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changePassword = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    if (req.user.userId !== id) {
+      return res.status(403).json({ message: "Unauthorized to change password"});
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if(!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = await generatePassword(newPassword);
+    await user.save();
+
+    res.status(200).json({ message: "Password changed succesfully" });
   } catch (error) {
     next(error);
   }
@@ -89,4 +127,4 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-export { getUsers, getUserById, createUser, updateUser, deleteUser };
+export { getUsers, getUserById, createUser, updateUser, changePassword, deleteUser };

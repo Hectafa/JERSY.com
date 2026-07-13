@@ -61,7 +61,11 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const value = { user, isAuthenticated: !!user, loading, login, logout };
+  const updateUser = (patch) => {
+    setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const value = { user, isAuthenticated: !!user, loading, login, logout, updateUser };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

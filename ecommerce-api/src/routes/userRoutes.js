@@ -4,6 +4,7 @@ import {
   getUserById,
   createUser,
   updateUser,
+  changePassword,
   deleteUser,
 } from "../controllers/userController.js";
 import validate from "../middlewares/validation.js";
@@ -13,16 +14,17 @@ import {
   userIdValidation,
   createUserValidation,
   updateUserValidation,
+  changePasswordValidation,
 } from "../validators/userValidators.js";
 
 const router = express.Router();
 
 router.get("/users", authMiddleware, isAdmin, getUsers);
 
+// Sin isAdmin: la autorización owner-or-admin vive en el controller.
 router.get(
   "/users/:id",
   authMiddleware,
-  isAdmin,
   userIdValidation,
   validate,
   getUserById,
@@ -40,10 +42,17 @@ router.post(
 router.put(
   "/users/:id",
   authMiddleware,
-  isAdmin,
   [...userIdValidation, ...updateUserValidation],
   validate,
   updateUser,
+);
+
+router.put(
+  "/users/:id/password",
+  authMiddleware,
+  [...userIdValidation, ...changePasswordValidation],
+  validate,
+  changePassword,
 );
 
 router.delete(

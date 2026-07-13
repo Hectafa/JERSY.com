@@ -4,13 +4,13 @@
 
 ## 2. Huecos de cobertura de test (no son bugs conocidos, pero no están verificados)
 
-| Área | Qué falta | Por qué importa |
-|------|-----------|------------------|
-| `PUT /api/products/:id` | Sin test de integración de la actualización en sí (solo creación/eliminación están cubiertas) | Es el único endpoint CRUD de productos sin verificar |
-| Métodos de pago (`PAY-001`) | Sin test de integración para crear/editar/eliminar vía `POST/PUT/DELETE /api/payment-methods` | Solo se usa `createPaymentMethod` como fixture para pruebas de órdenes, nunca se prueba el endpoint en sí |
-| Categorías (`CAT-001`) | Sin ningún test dedicado a `GET /api/categories`, `GET /api/categories/:id/products` | Solo se ejercita indirectamente vía catálogo en E2E |
-| Wishlist (`WISH-001`) | Backend completo (`wishlistController.js`/`wishlistRoutes.js`) sin ningún test | Bloqueado en la práctica porque tampoco hay consumidor frontend (ver sección 3) |
-| Búsqueda de productos (`PROD-002`) | Backend cubierto, pero sin test de frontend/E2E que ejercite una UI de búsqueda avanzada | No se sabe si el frontend realmente expone todos los filtros que el backend soporta |
+| Área                               | Qué falta                                                                                     | Por qué importa                                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `PUT /api/products/:id`            | Sin test de integración de la actualización en sí (solo creación/eliminación están cubiertas) | Es el único endpoint CRUD de productos sin verificar                                                      |
+| Métodos de pago (`PAY-001`)        | Sin test de integración para crear/editar/eliminar vía `POST/PUT/DELETE /api/payment-methods` | Solo se usa `createPaymentMethod` como fixture para pruebas de órdenes, nunca se prueba el endpoint en sí |
+| Categorías (`CAT-001`)             | Sin ningún test dedicado a `GET /api/categories`, `GET /api/categories/:id/products`          | Solo se ejercita indirectamente vía catálogo en E2E                                                       |
+| Wishlist (`WISH-001`)              | Backend completo (`wishlistController.js`/`wishlistRoutes.js`) sin ningún test                | Bloqueado en la práctica porque tampoco hay consumidor frontend (ver sección 3)                           |
+| Búsqueda de productos (`PROD-002`) | Backend cubierto, pero sin test de frontend/E2E que ejercite una UI de búsqueda avanzada      | No se sabe si el frontend realmente expone todos los filtros que el backend soporta                       |
 
 ## 3. Piezas del frontend que dependen de esta API y quedaron sin construir
 

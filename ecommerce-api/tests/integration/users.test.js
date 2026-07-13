@@ -65,4 +65,111 @@ describe("PUT /api/users/:id", () => {
     expect(await bcrypt.compare("NuevaPass123!", stored.password)).toBe(true);
     expect(await bcrypt.compare("OldPass123!", stored.password)).toBe(false);
   });
+
+  // NUEVO: patrón owner-or-admin — un customer puede editar su propio perfil.
+  it("permite a un customer actualizar su propio nombre y email", async () => {
+    const { user, token } = await createUser();
+
+    const res = await request(app)
+      .put(`/api/users/${user._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ name: "Mi nombre nuevo", email: "nuevo@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe("Mi nombre nuevo");
+    expect(res.body.email).toBe("nuevo@example.com");
+  });
+
+  it("rechaza con 403 cuando un customer intenta editar a otro usuario", async () => {
+    const { token } = await createUser();
+    const { user: other } = await createUser();
+
+    const res = await request(app)
+      .put(`/api/users/${other._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ name: "Hackeado" });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("ignora role y password cuando un customer edita su propio perfil", async () => {
+    const { user, token } = await createUser({ password: "OldPass123!" });
+
+    const res = await request(app)
+      .put(`/api/users/${user._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ role: "admin", password: "NuevaPass123!" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.role).toBe("customer");
+
+    const stored = await User.findById(user._id);
+    expect(await bcrypt.compare("OldPass123!", stored.password)).toBe(true);
+  });
+});
+
+describe("GET /api/users/:id", () => {
+  it("permite a un customer ver su propio perfil", async () => {
+    const { user, token } = await createUser();
+
+    const res = await request(app)
+      .get(`/api/users/${user._id}`)
+      .set("Authorization", authHeader(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe(user.email);
+  });
+
+  it("rechaza con 403 cuando un customer intenta ver a otro usuario", async () => {
+    const { token } = await createUser();
+    const { user: other } = await createUser();
+
+    const res = await request(app)
+      .get(`/api/users/${other._id}`)
+      .set("Authorization", authHeader(token));
+
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("PUT /api/users/:id/password", () => {
+  it("cambia el password cuando currentPassword es correcto", async () => {
+    const { user, token } = await createUser({ password: "OldPass123!" });
+
+    const res = await request(app)
+      .put(`/api/users/${user._id}/password`)
+      .set("Authorization", authHeader(token))
+      .send({ currentPassword: "OldPass123!", newPassword: "NuevaPass123!" });
+
+    expect(res.status).toBe(200);
+
+    const stored = await User.findById(user._id);
+    expect(await bcrypt.compare("NuevaPass123!", stored.password)).toBe(true);
+  });
+
+  it("rechaza con 400 cuando currentPassword es incorrecto", async () => {
+    const { user, token } = await createUser({ password: "OldPass123!" });
+
+    const res = await request(app)
+      .put(`/api/users/${user._id}/password`)
+      .set("Authorization", authHeader(token))
+      .send({ currentPassword: "Incorrecta123!", newPassword: "NuevaPass123!" });
+
+    expect(res.status).toBe(400);
+
+    const stored = await User.findById(user._id);
+    expect(await bcrypt.compare("OldPass123!", stored.password)).toBe(true);
+  });
+
+  it("rechaza con 403 cuando se intenta cambiar el password de otro usuario", async () => {
+    const { token } = await createUser();
+    const { user: other } = await createUser({ password: "OldPass123!" });
+
+    const res = await request(app)
+      .put(`/api/users/${other._id}/password`)
+      .set("Authorization", authHeader(token))
+      .send({ currentPassword: "OldPass123!", newPassword: "NuevaPass123!" });
+
+    expect(res.status).toBe(403);
+  });
 });

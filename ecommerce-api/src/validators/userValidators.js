@@ -32,3 +32,12 @@ export const updateUserValidation = [
     .isIn(["customer", "admin"])
     .withMessage("Role must be customer or admin"),
 ];
+
+export const changePasswordValidation = [
+  body("currentPassword")
+    .notEmpty()
+    .withMessage("Current password is required"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("New password must be at least 6 characters"),
+];

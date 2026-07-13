@@ -3,7 +3,9 @@ import { CartProvider } from "../../context/CartContext";
 import Layout from "../../layout/Layout";
 import Cart from "../../pages/Cart";
 import CategoryPage from "../../pages/CategoryPage";
+import ChangePassword from "../ChangePassword/ChangePassword";
 import Checkout from "../../pages/Checkout";
+import EditProfile from "../EditProfileForm/EditProfile";
 import Home from "../../pages/Home";
 import Login from "../../pages/Login";
 import OrderConfirmation from "../../pages/OrderConfirmation";
@@ -38,6 +40,29 @@ function App() {
                     allowedRoles={["admin", "customer", "cliente"]}
                   >
                     <Profile />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/profile/edit"
+                element={
+                  <ProtectedRoute
+                    redirectTo="/login"
+                    allowedRoles={["admin", "customer", "cliente"]}
+                  >
+                    <EditProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/change-password"
+                element={
+                  <ProtectedRoute
+                    redirectTo="/login"
+                    allowedRoles={["admin", "customer", "cliente"]}
+                  >
+                    <ChangePassword />
                   </ProtectedRoute>
                 }
               />
