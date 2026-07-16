@@ -77,24 +77,29 @@ export default function BannerCarousel({ banners = [] }) {
         {/* Slides container */}
         <div className="slides-wrapper">
           {banners.map((banner, index) => {
+            const isPrev =
+              index === currentIndex - 1 ||
+              (currentIndex === 0 && index === banners.length - 1);
+            const isNext =
+              index === currentIndex + 1 ||
+              (currentIndex === banners.length - 1 && index === 0);
+            const isActive = index === currentIndex;
+            // Solo se descarga la imagen de la slide activa y sus vecinas
+            // inmediatas (las que pueden entrar en pantalla a continuación).
+            // Las demás muestran su backgroundColor como placeholder hasta
+            // que quedan a un paso de ser visibles — evita descargar las 4
+            // imágenes del hero al mismo tiempo en el primer render.
+            const shouldLoadImage = isActive || isPrev || isNext;
             return (
               <div
                 key={banner.id || index}
-                className={`banner-slide ${
-                  index === currentIndex ? "active" : ""
-                } ${
-                  index === currentIndex - 1 ||
-                  (currentIndex === 0 && index === banners.length - 1)
-                    ? "prev"
-                    : ""
-                } ${
-                  index === currentIndex + 1 ||
-                  (currentIndex === banners.length - 1 && index === 0)
-                    ? "next"
-                    : ""
-                }`}
+                className={`banner-slide ${isActive ? "active" : ""} ${
+                  isPrev ? "prev" : ""
+                } ${isNext ? "next" : ""}`}
                 style={{
-                  backgroundImage: `url(${banner.image})`,
+                  backgroundImage: shouldLoadImage
+                    ? `url(${banner.image})`
+                    : undefined,
                   backgroundColor: banner.backgroundColor,
                 }}
                 aria-hidden={index !== currentIndex}

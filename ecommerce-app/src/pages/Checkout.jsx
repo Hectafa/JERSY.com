@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CartView from "../components/Cart/CartView";
-import AddressForm from "../components/Checkout/Address/AddressForm";
 import AddressList from "../components/Checkout/Address/AddressList";
-import PaymentForm from "../components/Checkout/Payment/PaymentForm";
 import PaymentList from "../components/Checkout/Payment/PaymentList";
 import SummarySection from "../components/Checkout/shared/SummarySection";
 import Button from "../components/common/Button";
@@ -11,8 +9,9 @@ import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
 import Loading from "../components/common/Loading/Loading";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
-import { createOrder } from "../services/orderService";
+import { createOrder, updateOrderStatus } from "../services/orderService";
 import {
+  chargePaymentMethod,
   createPaymentMethod,
   getDefaultPaymentMethod,
   getPaymentMethods,
@@ -25,6 +24,12 @@ import {
   updateAddress,
 } from "../services/shippingService";
 import "./Checkout.css";
+
+// Solo se renderizan cuando el usuario elige agregar/editar dirección o
+// pago (no hay dirección/pago por defecto, o hace click en "editar") —
+// se descargan bajo demanda en vez de con el resto de Checkout.
+const AddressForm = lazy(() => import("../components/Checkout/Address/AddressForm"));
+const PaymentForm = lazy(() => import("../components/Checkout/Payment/PaymentForm"));
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -403,10 +408,9 @@ export default function Checkout() {
   // --- FINALIZACIÓN DE ORDEN ---
 
   /**
-   * Crea la orden real vía POST /api/orders y, si tiene éxito, la guarda
-   * también en localStorage (para que /orders siga funcionando) y redirige
-   * a la confirmación. Bloquea envíos duplicados mientras la petición está
-   * en curso.
+   * Crea la orden real vía POST /api/orders y, si tiene éxito, redirige a la
+   * confirmación (que recibe la orden por router state). Bloquea envíos
+   * duplicados mientras la petición está en curso.
    */
   const handleCreateOrder = async () => {
     if (
@@ -430,6 +434,15 @@ export default function Checkout() {
     }));
 
     try {
+      const charge = await chargePaymentMethod(selectedPayment._id, grandTotal);
+      if (charge.status === "declined") {
+        setOrderError(
+          "Tu pago fue rechazado. Intenta con otro método de pago."
+        );
+        setOrderSubmitting(false);
+        return;
+      }
+
       const backendOrder = await createOrder({
         user: user?.id,
         products: cartItems.map((item) => ({
@@ -443,6 +456,19 @@ export default function Checkout() {
         shippingCost,
       });
 
+      // La orden ya existe en este punto; si esta actualización falla no debe
+      // impedir que el usuario llegue a la confirmación.
+      let orderStatus = backendOrder.status || "pending";
+      try {
+        const updated = await updateOrderStatus(backendOrder._id, {
+          status: "processing",
+          paymentStatus: "paid",
+        });
+        orderStatus = updated.status || orderStatus;
+      } catch (statusErr) {
+        // no-op: la orden se creó correctamente, solo no se marcó como pagada
+      }
+
       const order = {
         id: backendOrder._id,
         date: backendOrder.createdAt || new Date().toISOString(),
@@ -453,12 +479,8 @@ export default function Checkout() {
         total: grandTotal,
         shippingAddress: selectedAddress,
         paymentMethod: selectedPayment,
-        status: backendOrder.status || "pending",
+        status: orderStatus,
       };
-
-      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-      orders.push(order);
-      localStorage.setItem("orders", JSON.stringify(orders));
 
       setIsOrderFinished(true);
       clearCart();
@@ -513,12 +535,14 @@ export default function Checkout() {
                 onDelete={handleAddressDelete}
               />
             ) : (
-              <AddressForm
-                onSubmit={handleAddressSubmit}
-                onCancel={handleCancelAddress}
-                initialValues={editingAddress || {}}
-                isEdit={!!editingAddress}
-              />
+              <Suspense fallback={<Loading>Cargando formulario...</Loading>}>
+                <AddressForm
+                  onSubmit={handleAddressSubmit}
+                  onCancel={handleCancelAddress}
+                  initialValues={editingAddress || {}}
+                  isEdit={!!editingAddress}
+                />
+              </Suspense>
             )}
           </SummarySection>
 
@@ -552,12 +576,14 @@ export default function Checkout() {
                 onDelete={handlePaymentDelete}
               />
             ) : (
-              <PaymentForm
-                onSubmit={handlePaymentSubmit}
-                onCancel={handleCancelPayment}
-                initialValues={editingPayment || {}}
-                isEdit={!!editingPayment}
-              />
+              <Suspense fallback={<Loading>Cargando formulario...</Loading>}>
+                <PaymentForm
+                  onSubmit={handlePaymentSubmit}
+                  onCancel={handleCancelPayment}
+                  initialValues={editingPayment || {}}
+                  isEdit={!!editingPayment}
+                />
+              </Suspense>
             )}
           </SummarySection>
 

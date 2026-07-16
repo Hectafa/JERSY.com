@@ -42,6 +42,10 @@ const getOrderById = async (req, res, next) => {
   }
 };
 
+// Misma tasa que ya usaba Checkout.jsx para mostrarle el IVA al usuario
+// antes de confirmar — ahora también se recalcula y persiste server-side.
+const TAX_RATE = 0.16;
+
 const createOrder = async (req, res, next) => {
   try {
     const { user, products, address, paymentMethod, shippingCost = 0 } =
@@ -75,7 +79,8 @@ const createOrder = async (req, res, next) => {
       });
     }
 
-    const computedTotal = computedSubtotal + shippingCost;
+    const computedTax = parseFloat((computedSubtotal * TAX_RATE).toFixed(2));
+    const computedTotal = computedSubtotal + computedTax + shippingCost;
 
     // NUEVO (fix): antes no había ninguna prevención de duplicados a nivel
     // servidor (solo se deshabilitaba el botón en el frontend). Ahora se
@@ -117,12 +122,35 @@ const createOrder = async (req, res, next) => {
       paymentMethod,
       totalPrice: computedTotal,
       shippingCost,
+      tax: computedTax,
     });
 
     await newOrder.populate("user");
     await newOrder.populate("products.productId");
 
     res.status(201).json(newOrder);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOrdersByUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const isOwner = id === req.user.userId;
+    const isAdminUser = req.user.role === "admin";
+    if (!isOwner && !isAdminUser) {
+      return res.status(403).json({ message: "Unauthorized to view these orders" });
+    }
+
+    const orders = await Order.find({ user: id })
+      .populate("products.productId")
+      .populate("address")
+      .populate("paymentMethod")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
   } catch (error) {
     next(error);
   }
@@ -149,4 +177,4 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-export { getOrders, getOrderById, createOrder, updateOrderStatus };
+export { getOrders, getOrderById, getOrdersByUser, createOrder, updateOrderStatus };

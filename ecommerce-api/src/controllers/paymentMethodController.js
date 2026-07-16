@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import PaymentMethod from "../models/PaymentMethod.js";
 
 const getPaymentMethodsByUser = async (req, res, next) => {
@@ -121,6 +122,46 @@ const deletePaymentMethod = async (req, res, next) => {
   }
 };
 
+// Simulador de cobro: no hay pasarela real detrás, solo una regla de prueba
+// (tarjeta terminada en "0000" = rechazo) para poder probar ambos flujos.
+const chargePaymentMethod = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+
+    const paymentMethod = await PaymentMethod.findById(id);
+    if (!paymentMethod) {
+      return res.status(404).json({ message: "Payment method not found" });
+    }
+
+    const isOwner = paymentMethod.user.toString() === req.user.userId;
+    const isAdminUser = req.user.role === "admin";
+    if (!isOwner && !isAdminUser) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to use this payment method" });
+    }
+
+    const declined = paymentMethod.cardNumber?.endsWith("0000");
+
+    if (declined) {
+      return res.status(200).json({
+        status: "declined",
+        reason: "Fondos insuficientes o tarjeta rechazada",
+        amount,
+      });
+    }
+
+    res.status(200).json({
+      status: "approved",
+      transactionId: randomUUID(),
+      amount,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   getPaymentMethodsByUser,
   getPaymentMethods,
@@ -128,4 +169,5 @@ export {
   createPaymentMethod,
   updatePaymentMethod,
   deletePaymentMethod,
+  chargePaymentMethod,
 };

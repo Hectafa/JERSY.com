@@ -46,7 +46,9 @@ describe("POST /api/orders", () => {
 
     const stored = await Order.findById(res.body._id);
     expect(stored).not.toBeNull();
-    expect(stored.totalPrice).toBe(200);
+    // subtotal real 200 (2 x 100) + IVA 16% (32) + envío 0 = 232
+    expect(stored.tax).toBe(32);
+    expect(stored.totalPrice).toBe(232);
   });
 
   it("rechaza el payload cuando faltan productos, dirección o pago", async () => {
@@ -69,8 +71,9 @@ describe("POST /api/orders", () => {
   // servidor..." y esperaba `res.body.totalPrice === 1` (el valor falso
   // enviado por el cliente), documentando a propósito que orderController.
   // createOrder confiaba ciegamente en el totalPrice del payload. Ahora que
-  // el controlador recalcula el total desde los precios reales de la BD, se
-  // renombró y se actualizó para esperar el total correcto (200).
+  // el controlador recalcula el total desde los precios reales de la BD
+  // (subtotal + IVA 16% + envío), se renombró y se actualizó para esperar el
+  // total correcto (232).
   it("recalcula totalPrice desde los precios reales de la BD, ignorando el valor enviado por el cliente", async () => {
     const { user, token } = await createUser();
     const product = await createProduct({ price: 100 });
@@ -82,7 +85,7 @@ describe("POST /api/orders", () => {
       address,
       paymentMethod,
       product,
-      totalPrice: 1, // el cliente envía un total falso; el real es 200 (2 x 100)
+      totalPrice: 1, // el cliente envía un total falso; el real es 232 (200 + 16% IVA)
     });
 
     const res = await request(app)
@@ -91,11 +94,11 @@ describe("POST /api/orders", () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body.totalPrice).toBe(200);
+    expect(res.body.totalPrice).toBe(232);
   });
 
-  // NUEVO: el total recalculado debe incluir el shippingCost.
-  it("incluye shippingCost en el totalPrice recalculado", async () => {
+  // NUEVO: el total recalculado debe incluir el IVA y el shippingCost.
+  it("incluye IVA y shippingCost en el totalPrice recalculado", async () => {
     const { user, token } = await createUser();
     const product = await createProduct({ price: 100 });
     const address = await createAddress(user._id);
@@ -112,8 +115,9 @@ describe("POST /api/orders", () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    // subtotal real 200 (2 x 100) + shippingCost 50 = 250
-    expect(res.body.totalPrice).toBe(250);
+    // subtotal real 200 (2 x 100) + IVA 16% (32) + shippingCost 50 = 282
+    expect(res.body.tax).toBe(32);
+    expect(res.body.totalPrice).toBe(282);
   });
 
   // NUEVO: products[].price también se normaliza al precio real de la BD,
@@ -347,6 +351,72 @@ describe("GET /api/orders/:id", () => {
 
     expect(res.status).toBe(200);
     expect(res.body._id).toBe(created.body._id);
+  });
+});
+
+describe("GET /api/orders/user/:id", () => {
+  it("devuelve las órdenes del usuario ordenadas de la más reciente a la más antigua", async () => {
+    const { user, token } = await createUser();
+    const address = await createAddress(user._id);
+    const paymentMethod = await createPaymentMethod(user._id);
+    const productA = await createProduct({ price: 100 });
+    const productB = await createProduct({ price: 50 });
+
+    const first = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(await buildOrderPayload({ user, address, paymentMethod, product: productA, totalPrice: 200 }));
+    expect(first.status).toBe(201);
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 61 * 1000);
+
+    const second = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(await buildOrderPayload({ user, address, paymentMethod, product: productB, totalPrice: 100 }));
+    expect(second.status).toBe(201);
+    vi.useRealTimers();
+
+    const res = await request(app)
+      .get(`/api/orders/user/${user._id}`)
+      .set("Authorization", authHeader(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body[0]._id).toBe(second.body._id);
+    expect(res.body[1]._id).toBe(first.body._id);
+  });
+
+  it("rechaza con 403 a un usuario que consulta las órdenes de otro", async () => {
+    const owner = await createUser();
+    const otherUser = await createUser();
+
+    const res = await request(app)
+      .get(`/api/orders/user/${owner.user._id}`)
+      .set("Authorization", authHeader(otherUser.token));
+
+    expect(res.status).toBe(403);
+  });
+
+  it("permite a un admin ver las órdenes de cualquier usuario", async () => {
+    const owner = await createUser();
+    const admin = await createAdmin();
+    const address = await createAddress(owner.user._id);
+    const paymentMethod = await createPaymentMethod(owner.user._id);
+    const product = await createProduct({ price: 100 });
+
+    await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(owner.token))
+      .send(await buildOrderPayload({ user: owner.user, address, paymentMethod, product, totalPrice: 200 }));
+
+    const res = await request(app)
+      .get(`/api/orders/user/${owner.user._id}`)
+      .set("Authorization", authHeader(admin.token));
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
   });
 });
 

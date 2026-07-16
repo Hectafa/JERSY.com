@@ -1,36 +1,63 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import Orders from "./Orders";
+import ProtectedRoute from "./ProtectedRoute";
+import { AuthProvider } from "../context/AuthContext";
+import { getOrdersByUser } from "../services/orderService";
+
+jest.mock("../services/orderService");
+
+function buildFakeToken(payload) {
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body = btoa(JSON.stringify({ ...payload, exp: Math.floor(Date.now() / 1000) + 3600 }));
+  return `${header}.${body}.fake-signature`;
+}
+
+function seedAuthenticatedUser() {
+  localStorage.setItem(
+    "authToken",
+    buildFakeToken({ userId: "user-1", name: "Ada Lovelace", role: "customer" }),
+  );
+}
 
 const buildOrder = (overrides = {}) => ({
-  id: "order-1",
-  date: "2026-06-01T10:00:00.000Z",
-  items: [{ name: "Teclado Mecánico", price: 100, quantity: 2, subtotal: 200 }],
-  subtotal: 200,
+  _id: "order-1",
+  createdAt: "2026-06-01T10:00:00.000Z",
+  products: [
+    { productId: { _id: "p1", name: "Teclado Mecánico" }, price: 100, quantity: 2 },
+  ],
   tax: 32,
-  shipping: 0,
-  total: 232,
-  shippingAddress: {
+  shippingCost: 0,
+  totalPrice: 232,
+  address: {
     name: "Ada Lovelace",
-    address1: "Calle Falsa 123",
+    address: "Calle Falsa 123",
     city: "CDMX",
     postalCode: "01000",
     country: "México",
   },
-  paymentMethod: { alias: "Tarjeta ****1111", cardNumber: "4111111111111111" },
+  paymentMethod: { cardHolderName: "Ada Lovelace", cardNumber: "4111111111111111" },
   status: "pending",
   ...overrides,
 });
 
-function seedOrders(orders) {
-  localStorage.setItem("orders", JSON.stringify(orders));
-}
-
-function renderOrders() {
+function renderOrdersRoute() {
   return render(
-    <MemoryRouter>
-      <Orders />
+    <MemoryRouter initialEntries={["/orders"]}>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<div>Página de login</div>} />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute redirectTo="/login">
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
@@ -38,58 +65,56 @@ function renderOrders() {
 describe("Orders (página)", () => {
   beforeEach(() => {
     localStorage.clear();
+    jest.clearAllMocks();
+    seedAuthenticatedUser();
   });
 
-  test("muestra un estado vacío cuando no hay pedidos guardados", () => {
-    renderOrders();
+  test("muestra un estado vacío cuando el usuario no tiene pedidos", async () => {
+    getOrdersByUser.mockResolvedValue([]);
 
-    expect(screen.getByText("No tienes pedidos guardados")).toBeInTheDocument();
+    renderOrdersRoute();
+
+    expect(
+      await screen.findByText("No tienes pedidos todavía"),
+    ).toBeInTheDocument();
   });
 
-  test("lista los pedidos guardados en localStorage", () => {
-    seedOrders([buildOrder({ id: "order-1" }), buildOrder({ id: "order-2" })]);
+  test("lista los pedidos devueltos por el backend", async () => {
+    getOrdersByUser.mockResolvedValue([
+      buildOrder({ _id: "order-1" }),
+      buildOrder({ _id: "order-2" }),
+    ]);
 
-    renderOrders();
+    renderOrdersRoute();
 
-    expect(screen.getByText("#order-1")).toBeInTheDocument();
+    expect(await screen.findByText("#order-1")).toBeInTheDocument();
     expect(screen.getByText("#order-2")).toBeInTheDocument();
-    expect(screen.getByText("Tienes 2 pedidos guardados en este dispositivo")).toBeInTheDocument();
+    expect(screen.getByText("Tienes 2 pedidos")).toBeInTheDocument();
+    expect(getOrdersByUser).toHaveBeenCalledWith("user-1");
   });
 
-  test("ordena los pedidos del más reciente al más antiguo", () => {
-    seedOrders([
-      buildOrder({ id: "order-old", date: "2026-01-01T00:00:00.000Z" }),
-      buildOrder({ id: "order-new", date: "2026-06-01T00:00:00.000Z" }),
+  test("selecciona el primer pedido de la lista por defecto y muestra su detalle", async () => {
+    getOrdersByUser.mockResolvedValue([
+      buildOrder({ _id: "order-new", totalPrice: 232 }),
+      buildOrder({ _id: "order-old", totalPrice: 100 }),
     ]);
 
-    renderOrders();
+    renderOrdersRoute();
 
-    const orderButtons = screen.getAllByRole("button", { name: /order-/ });
-    expect(orderButtons[0]).toHaveTextContent("order-new");
-    expect(orderButtons[1]).toHaveTextContent("order-old");
+    expect(await screen.findByText("Pedido #order-new")).toBeInTheDocument();
   });
 
-  test("selecciona el primer pedido (el más reciente) por defecto y muestra su detalle", () => {
-    seedOrders([
-      buildOrder({ id: "order-old", date: "2026-01-01T00:00:00.000Z", total: 100 }),
-      buildOrder({ id: "order-new", date: "2026-06-01T00:00:00.000Z", total: 232 }),
-    ]);
-
-    renderOrders();
-
-    expect(screen.getByText("Pedido #order-new")).toBeInTheDocument();
-  });
-
-  test("al hacer clic en un pedido se muestra su detalle (productos, dirección, pago)", () => {
-    seedOrders([
-      buildOrder({ id: "order-1", date: "2026-06-01T00:00:00.000Z" }),
+  test("al hacer clic en un pedido se muestra su detalle (productos, dirección, pago)", async () => {
+    getOrdersByUser.mockResolvedValue([
+      buildOrder({ _id: "order-1" }),
       buildOrder({
-        id: "order-2",
-        date: "2026-05-01T00:00:00.000Z",
-        items: [{ name: "Mouse Inalámbrico", price: 50, quantity: 1, subtotal: 50 }],
-        shippingAddress: {
+        _id: "order-2",
+        products: [
+          { productId: { _id: "p2", name: "Mouse Inalámbrico" }, price: 50, quantity: 1 },
+        ],
+        address: {
           name: "Grace Hopper",
-          address1: "Av. Siempre Viva 456",
+          address: "Av. Siempre Viva 456",
           city: "Guadalajara",
           postalCode: "44100",
           country: "México",
@@ -97,20 +122,32 @@ describe("Orders (página)", () => {
       }),
     ]);
 
-    renderOrders();
+    renderOrdersRoute();
 
-    userEvent.click(screen.getByText("#order-2"));
+    userEvent.click(await screen.findByText("#order-2"));
 
-    expect(screen.getByText("Pedido #order-2")).toBeInTheDocument();
+    expect(await screen.findByText("Pedido #order-2")).toBeInTheDocument();
     expect(screen.getByText("Mouse Inalámbrico")).toBeInTheDocument();
     expect(screen.getByText("Grace Hopper")).toBeInTheDocument();
   });
 
-  test("muestra 'Sin dirección registrada' cuando el pedido no tiene shippingAddress", () => {
-    seedOrders([buildOrder({ shippingAddress: null })]);
+  test("muestra 'Sin dirección registrada' cuando el pedido no tiene dirección", async () => {
+    getOrdersByUser.mockResolvedValue([buildOrder({ address: null })]);
 
-    renderOrders();
+    renderOrdersRoute();
 
-    expect(screen.getByText("Sin dirección registrada.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Sin dirección registrada."),
+    ).toBeInTheDocument();
+  });
+
+  test("muestra un error si falla la carga de pedidos", async () => {
+    getOrdersByUser.mockRejectedValue({ kind: "SERVER_ERROR" });
+
+    renderOrdersRoute();
+
+    expect(
+      await screen.findByText("No se pudieron cargar tus pedidos."),
+    ).toBeInTheDocument();
   });
 });

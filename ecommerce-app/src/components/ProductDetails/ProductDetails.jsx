@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import Breadcrumb from "../../layout/Breadcrumb/Breadcrumb";
 import { getProductById } from "../../services/productsService";
+import { addProductToWishlist } from "../../services/wishlistService";
 import Badge from "../common/Badge";
 import Button from "../common/Button";
 import ErrorMessage from "../common/ErrorMessage/ErrorMessage";
+import Icon from "../common/Icon/Icon";
 import "./ProductDetails.css";
 
 export default function ProductDetails({ productId }) {
   const { addItem: addToCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [wishlistStatus, setWishlistStatus] = useState("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +43,17 @@ export default function ProductDetails({ productId }) {
 
   const handleAddToCart = () => {
     if (product) addToCart(product, 1);
+  };
+
+  const handleAddToWishlist = async () => {
+    if (!product) return;
+    try {
+      setWishlistStatus("saving");
+      await addProductToWishlist(user.id, product._id);
+      setWishlistStatus("saved");
+    } catch (err) {
+      setWishlistStatus("error");
+    }
   };
 
   if (loading) return <ProductDetailSkeleton />;
@@ -115,6 +131,10 @@ export default function ProductDetails({ productId }) {
           <img
             src={imageURL || "/img/products/placeholder.svg"}
             alt={name}
+            width="600"
+            height="600"
+            fetchpriority="high"
+            decoding="async"
             onError={(event) => {
               event.target.src = "/img/products/placeholder.svg";
             }}
@@ -152,7 +172,24 @@ export default function ProductDetails({ productId }) {
             >
               Ver carrito
             </Link>
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                size="lg"
+                disabled={wishlistStatus === "saving" || wishlistStatus === "saved"}
+                onClick={handleAddToWishlist}
+                data-testid="add-to-wishlist-button"
+              >
+                <Icon name="heart" size={18} />
+                {wishlistStatus === "saved"
+                  ? "Agregado a la lista"
+                  : "Agregar a lista de deseos"}
+              </Button>
+            )}
           </div>
+          {wishlistStatus === "error" && (
+            <ErrorMessage>No se pudo agregar el producto a tu lista de deseos.</ErrorMessage>
+          )}
         </div>
       </div>
     </div>

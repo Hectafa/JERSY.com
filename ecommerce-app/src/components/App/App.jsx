@@ -1,23 +1,29 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CartProvider } from "../../context/CartContext";
 import Layout from "../../layout/Layout";
-import Cart from "../../pages/Cart";
-import CategoryPage from "../../pages/CategoryPage";
-import ChangePassword from "../ChangePassword/ChangePassword";
-import Checkout from "../../pages/Checkout";
-import EditProfile from "../EditProfileForm/EditProfile";
 import Home from "../../pages/Home";
 import Login from "../../pages/Login";
-import OrderConfirmation from "../../pages/OrderConfirmation";
-import Orders from "../../pages/Orders";
-import Product from "../../pages/Product";
-import Profile from "../../pages/Profile";
 import ProtectedRoute from "../../pages/ProtectedRoute";
 import Register from "../../pages/Register";
-import SearchResults from "../../pages/SearchResults";
-import Settings from "../../pages/Setttings";
-import WishList from "../../pages/WishList";
 import { AuthProvider } from "../../context/AuthContext";
+import Loading from "../common/Loading/Loading";
+
+// Rutas fuera del camino crítico (no son "/"): se descargan bajo demanda
+// para reducir el bundle inicial. Home/Login/Register/ProtectedRoute se
+// mantienen eager porque son la entrada más común o wrappers triviales.
+const AdminProducts = lazy(() => import("../../pages/AdminProducts"));
+const Cart = lazy(() => import("../../pages/Cart"));
+const CategoryPage = lazy(() => import("../../pages/CategoryPage"));
+const ChangePassword = lazy(() => import("../ChangePassword/ChangePassword"));
+const Checkout = lazy(() => import("../../pages/Checkout"));
+const EditProfile = lazy(() => import("../EditProfileForm/EditProfile"));
+const OrderConfirmation = lazy(() => import("../../pages/OrderConfirmation"));
+const Orders = lazy(() => import("../../pages/Orders"));
+const Product = lazy(() => import("../../pages/Product"));
+const Profile = lazy(() => import("../../pages/Profile"));
+const SearchResults = lazy(() => import("../../pages/SearchResults"));
+const WishList = lazy(() => import("../../pages/WishList"));
 
 function App() {
   return (
@@ -25,6 +31,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Layout>
+            <Suspense fallback={<Loading>Cargando...</Loading>}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/cart" element={<Cart />} />
@@ -94,17 +101,18 @@ function App() {
                 path="/order-confirmation"
                 element={<OrderConfirmation />}
               />
+              <Route path="/register" element={<Register />} />
               <Route
-                path="/settings"
+                path="/admin/products"
                 element={
-                  <ProtectedRoute>
-                    <Settings></Settings>
+                  <ProtectedRoute redirectTo="/login" allowedRoles={["admin"]}>
+                    <AdminProducts />
                   </ProtectedRoute>
                 }
               />
-              <Route path="/register" element={<Register />} />
               <Route path="*" element={<div>Ruta no encontrada</div>} />
             </Routes>
+            </Suspense>
           </Layout>
         </CartProvider>
       </AuthProvider>

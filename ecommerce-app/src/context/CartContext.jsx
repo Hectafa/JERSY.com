@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 import {
   getCartByUser,
@@ -61,85 +61,103 @@ export function CartProvider({ children }) {
     [items],
   );
 
-  const addItem = async (product, quantity = 1) => {
-    const existingProduct = items.find(
-      (item) => item.product._id === product._id,
-    );
+  const syncWithApi = useCallback(
+    async (nextItems) => {
+      if (!isAuthenticated) return;
 
-    const nextItems = existingProduct
-      ? items.map((item) =>
-          item.product._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item,
-        )
-      : [...items, { product, quantity }];
-
-    changeItems(nextItems);
-  };
-
-  const updateQuantity = async (itemId, quantity) => {
-    if (quantity < 1) {
-      removeItem(itemId);
-      return;
-    }
-
-    const nextItems = items.map((item) =>
-      item.product._id === itemId ? { ...item, quantity } : item,
-    );
-
-    changeItems(nextItems);
-  };
-
-  const removeItem = async (itemId) => {
-    const actualItems = items.filter((item) => item.product._id !== itemId);
-    changeItems(actualItems);
-  };
-
-  const clearCart = () => changeItems([]);
-
-  const syncWithApi = async (nextItems) => {
-    if (!isAuthenticated) return;
-
-    // Carrito vacío = el usuario no tiene un carrito
-    if (nextItems.length === 0) {
-      if (cartId) {
-        await serviceClearCart(cartId);
-        setCartId(null);
+      // Carrito vacío = el usuario no tiene un carrito
+      if (nextItems.length === 0) {
+        if (cartId) {
+          await serviceClearCart(cartId);
+          setCartId(null);
+        }
       }
-    }
 
-    const products = nextItems.map((item) => ({
-      product: item.product._id,
-      quantity: item.quantity,
-    }));
+      const products = nextItems.map((item) => ({
+        product: item.product._id,
+        quantity: item.quantity,
+      }));
 
-    if (!cartId) {
-      const created = await createCart(user.id, products);
-      setCartId(created._id);
-    } else {
-      await replaceCart(cartId, user.id, products);
-    }
-  };
+      if (!cartId) {
+        const created = await createCart(user.id, products);
+        setCartId(created._id);
+      } else {
+        await replaceCart(cartId, user.id, products);
+      }
+    },
+    [isAuthenticated, cartId, user],
+  );
 
-  const changeItems = (nextItems) => {
-    setItems(nextItems);
-    setError(null);
-    syncWithApi(nextItems).catch((err) => {
-      setError(err.kind ?? "SERVER_ERROR");
-    });
-  };
+  const changeItems = useCallback(
+    (nextItems) => {
+      setItems(nextItems);
+      setError(null);
+      syncWithApi(nextItems).catch((err) => {
+        setError(err.kind ?? "SERVER_ERROR");
+      });
+    },
+    [syncWithApi],
+  );
 
-  const value = {
-    items,
-    count,
-    total,
-    addItem,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    loading,
-    error,
-  };
+  const removeItem = useCallback(
+    async (itemId) => {
+      const actualItems = items.filter((item) => item.product._id !== itemId);
+      changeItems(actualItems);
+    },
+    [items, changeItems],
+  );
+
+  const addItem = useCallback(
+    async (product, quantity = 1) => {
+      const existingProduct = items.find(
+        (item) => item.product._id === product._id,
+      );
+
+      const nextItems = existingProduct
+        ? items.map((item) =>
+            item.product._id === product._id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item,
+          )
+        : [...items, { product, quantity }];
+
+      changeItems(nextItems);
+    },
+    [items, changeItems],
+  );
+
+  const updateQuantity = useCallback(
+    async (itemId, quantity) => {
+      if (quantity < 1) {
+        removeItem(itemId);
+        return;
+      }
+
+      const nextItems = items.map((item) =>
+        item.product._id === itemId ? { ...item, quantity } : item,
+      );
+
+      changeItems(nextItems);
+    },
+    [items, changeItems, removeItem],
+  );
+
+  const clearCart = useCallback(() => changeItems([]), [changeItems]);
+
+  const value = useMemo(
+    () => ({
+      items,
+      count,
+      total,
+      addItem,
+      updateQuantity,
+      removeItem,
+      clearCart,
+      loading,
+      error,
+    }),
+    [items, count, total, addItem, updateQuantity, removeItem, clearCart, loading, error],
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

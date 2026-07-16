@@ -15,8 +15,7 @@ function buildRoleActions(navigate) {
       { label: "Editar Perfil", action: () => navigate("/profile/edit") },
       { label: "Cambiar contraseña", action: () => navigate("/profile/change-password") },
       { label: "Ver todos los pedidos", action: () => navigate("/orders") },
-      // Fuera de alcance por ahora: no existe página de panel de administración.
-      { label: "Panel de administración", action: () => {} },
+      { label: "Panel de administración", action: () => navigate("/admin/products") },
     ],
     customer: [
       { label: "Editar Perfil", action: () => navigate("/profile/edit") },
@@ -44,6 +43,9 @@ export default function ProfileCard({ user: userProp }) {
               currentUser.displayName || currentUser.name || currentUser.email
             }
             className="profile-avatar"
+            width="96"
+            height="96"
+            decoding="async"
           />
           <div className="profile-names">
             <h2>

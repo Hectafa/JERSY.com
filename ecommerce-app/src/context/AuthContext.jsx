@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { login as loginService } from "../services/authService";
 import {
   clearToken,
@@ -47,25 +47,28 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     const { token } = await loginService(credentials);
     saveToken(token);
 
     const payload = decodeToken(token);
     if (!payload) throw new Error("Token inválido del backend");
     setUser({ id: payload.userId, name: payload.name, role: payload.role });
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearToken();
     setUser(null);
-  };
+  }, []);
 
-  const updateUser = (patch) => {
+  const updateUser = useCallback((patch) => {
     setUser((prev) => (prev ? { ...prev, ...patch } : prev));
-  };
+  }, []);
 
-  const value = { user, isAuthenticated: !!user, loading, login, logout, updateUser };
+  const value = useMemo(
+    () => ({ user, isAuthenticated: !!user, loading, login, logout, updateUser }),
+    [user, loading, login, logout, updateUser],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

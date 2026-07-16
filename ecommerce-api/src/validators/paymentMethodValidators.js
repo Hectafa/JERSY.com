@@ -33,6 +33,17 @@ export const createPaymentValidation = [
         .withMessage("isDefault must be a boolean"),
 ];
 
+export const chargePaymentValidation = [
+    param("id")
+        .isMongoId()
+        .withMessage("Payment method ID must be a valid MongoDB ObjectId"),
+    body("amount")
+        .notEmpty()
+        .withMessage("Amount is required")
+        .isFloat({ gt: 0 })
+        .withMessage("Amount must be a positive number"),
+];
+
 export const updatePaymentValidation = [
     param("id")
         .isMongoId()

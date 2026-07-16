@@ -13,6 +13,15 @@
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <!-- Primera imagen del hero (src/data/homeImages.json[0].image): si se
+       reordena o cambia esa entrada, actualizar esta URL también. -->
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+  <link
+    rel="preload"
+    as="image"
+    fetchpriority="high"
+    href="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop"
+  />
   <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.

@@ -6,6 +6,12 @@ export const orderIdValidation = [
     .withMessage("Order ID must be a valid MongoDB ObjectId"),
 ];
 
+export const userIdValidation = [
+  param("id")
+    .isMongoId()
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
+];
+
 export const createOrderValidation = [
   body("user")
     .notEmpty()

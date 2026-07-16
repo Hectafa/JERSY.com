@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { clearCache } from "./cache";
 import {
   getAllCategories,
   getCategoryById,
@@ -13,6 +14,7 @@ jest.mock("./apiClient");
 describe("categoryService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearCache();
   });
 
   test("getAllCategories llama GET /categories", async () => {

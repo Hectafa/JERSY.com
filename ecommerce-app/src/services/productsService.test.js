@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import { clearCache } from "./cache";
 import {
   getAllProducts,
   getProductById,
@@ -13,6 +14,7 @@ jest.mock("./apiClient");
 describe("productsService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearCache();
   });
 
   test("getAllProducts llama GET /products y devuelve response.data", async () => {

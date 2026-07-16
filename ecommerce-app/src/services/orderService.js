@@ -11,3 +11,15 @@ export async function getOrderById(id) {
   const response = await apiClient.get(`/orders/${id}`);
   return response.data;
 }
+
+// GET /orders/user/:id → historial de órdenes del usuario
+export async function getOrdersByUser(userId) {
+  const response = await apiClient.get(`/orders/user/${userId}`);
+  return response.data;
+}
+
+// PUT /orders/:id → actualiza status/paymentStatus
+export async function updateOrderStatus(id, data) {
+  const response = await apiClient.put(`/orders/${id}`, data);
+  return response.data;
+}

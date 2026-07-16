@@ -1,13 +1,18 @@
 import apiClient from "./apiClient";
+import { clearCache, getOrFetch } from "./cache";
 
 export async function getAllProducts() {
-  const response = await apiClient.get("/products");
-  return response.data;
+  return getOrFetch("products:all", async () => {
+    const response = await apiClient.get("/products");
+    return response.data;
+  });
 }
 
 export async function getProductById(id) {
-  const response = await apiClient.get("/products/" + id);
-  return response.data;
+  return getOrFetch(`products:${id}`, async () => {
+    const response = await apiClient.get("/products/" + id);
+    return response.data;
+  });
 }
 
 export async function searchProducts(filters = {}) {
@@ -30,14 +35,17 @@ export async function searchProducts(filters = {}) {
 
 export async function createProduct(data) {
   const response = await apiClient.post("/products", data);
+  clearCache();
   return response.data;
 }
 
 export async function updateProduct(id, data) {
   const response = await apiClient.put(`/products/${id}`, data);
+  clearCache();
   return response.data;
 }
 
 export async function deleteProduct(id) {
   await apiClient.delete(`/products/${id}`);
+  clearCache();
 }

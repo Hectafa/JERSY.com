@@ -12,8 +12,9 @@ import {
   getPaymentMethods,
   getDefaultPaymentMethod,
   createPaymentMethod,
+  chargePaymentMethod,
 } from "../services/paymentService";
-import { createOrder } from "../services/orderService";
+import { createOrder, updateOrderStatus } from "../services/orderService";
 import * as cartService from "../services/cartService";
 
 jest.mock("../services/shippingService");
@@ -113,6 +114,16 @@ describe("Checkout", () => {
     cartService.createCart.mockResolvedValue({ _id: "server-cart-1" });
     cartService.replaceCart.mockResolvedValue({ _id: "server-cart-1" });
     cartService.clearCart.mockResolvedValue(undefined);
+    // Cobro simulado: aprobado por defecto, los tests de rechazo lo sobreescriben.
+    chargePaymentMethod.mockResolvedValue({
+      status: "approved",
+      transactionId: "txn-1",
+      amount: 0,
+    });
+    updateOrderStatus.mockResolvedValue({
+      status: "processing",
+      paymentStatus: "paid",
+    });
   });
 
   test("calcula subtotal, IVA, envío y total a partir del carrito", async () => {
@@ -162,6 +173,11 @@ describe("Checkout", () => {
 
     await waitFor(() => expect(createOrder).toHaveBeenCalledTimes(1));
 
+    expect(chargePaymentMethod).toHaveBeenCalledWith("pay-1", 582);
+    expect(updateOrderStatus).toHaveBeenCalledWith("order-123", {
+      status: "processing",
+      paymentStatus: "paid",
+    });
     expect(createOrder).toHaveBeenCalledWith({
       user: "user-1",
       products: [{ productId: "prod-1", quantity: 2, price: 100 }],
@@ -180,7 +196,7 @@ describe("Checkout", () => {
     );
   });
 
-  test("vacía el carrito y guarda la orden en localStorage tras confirmar", async () => {
+  test("vacía el carrito y navega a la confirmación tras confirmar", async () => {
     seedCart([{ product: PRODUCT, quantity: 1 }]);
     getShippingAddresses.mockResolvedValue([ADDRESS]);
     getDefaultShippingAddress.mockResolvedValue(ADDRESS);
@@ -202,9 +218,9 @@ describe("Checkout", () => {
       expect(JSON.parse(localStorage.getItem("cart"))).toEqual([]);
     });
 
-    const savedOrders = JSON.parse(localStorage.getItem("orders"));
-    expect(savedOrders).toHaveLength(1);
-    expect(savedOrders[0].id).toBe("order-456");
+    expect(
+      await screen.findByTestId("confirmation-order-id"),
+    ).toHaveTextContent("order-456");
   });
 
   test("muestra un error y reactiva el botón si la creación de la orden falla", async () => {
@@ -282,7 +298,11 @@ describe("Checkout", () => {
     userEvent.click(within(paymentSection).getByText("Cambiar"));
     userEvent.click(await screen.findByText("Agregar Nueva Tarjeta"));
 
-    userEvent.type(screen.getByTestId("checkout-payment-alias-input"), "Tarjeta nueva");
+    // PaymentForm se carga bajo demanda (React.lazy) al abrir el formulario.
+    userEvent.type(
+      await screen.findByTestId("checkout-payment-alias-input"),
+      "Tarjeta nueva",
+    );
     userEvent.type(screen.getByTestId("checkout-payment-card-number-input"), "1234-5678-9012-3456");
     userEvent.type(screen.getByTestId("checkout-payment-holder-input"), "Juan Pérez");
     userEvent.type(screen.getByTestId("checkout-payment-expiry-input"), "12/28");
@@ -293,6 +313,30 @@ describe("Checkout", () => {
     expect(createPaymentMethod).toHaveBeenCalledWith(
       expect.objectContaining({ cardNumber: "1234567890123456" }),
     );
+  });
+
+  test("muestra un error y no crea la orden si el pago simulado es rechazado", async () => {
+    seedCart([{ product: PRODUCT, quantity: 1 }]);
+    getShippingAddresses.mockResolvedValue([ADDRESS]);
+    getDefaultShippingAddress.mockResolvedValue(ADDRESS);
+    getPaymentMethods.mockResolvedValue([PAYMENT]);
+    getDefaultPaymentMethod.mockResolvedValue(PAYMENT);
+    chargePaymentMethod.mockResolvedValue({
+      status: "declined",
+      reason: "Fondos insuficientes o tarjeta rechazada",
+    });
+
+    renderCheckout();
+
+    const confirmButton = await screen.findByTestId("checkout-confirm-button");
+    await waitFor(() => expect(confirmButton).not.toBeDisabled());
+    userEvent.click(confirmButton);
+
+    expect(
+      await screen.findByTestId("checkout-order-error"),
+    ).toBeInTheDocument();
+    expect(createOrder).not.toHaveBeenCalled();
+    await waitFor(() => expect(confirmButton).not.toBeDisabled());
   });
 
   test("redirige a /cart si se entra al checkout con el carrito vacío", async () => {

@@ -314,10 +314,12 @@ export default function Header() {
                             <Icon name="heart" size={16} />
                             Lista de Deseos
                           </Link>
-                          <Link to="/settings" className="user-link">
-                            <Icon name="settings" size={16} />
-                            Configuración
-                          </Link>
+                          {user?.role === "admin" && (
+                            <Link to="/admin/products" className="user-link">
+                              <Icon name="grid" size={16} />
+                              Panel de administración
+                            </Link>
+                          )}
                         </div>
 
                         <div className="logout-section">
@@ -470,14 +472,16 @@ export default function Header() {
                     <Icon name="heart" size={20} />
                     Lista de Deseos
                   </Link>
-                  <Link
-                    to="/settings"
-                    className="mobile-nav-link"
-                    onClick={handleMobileMenuClose}
-                  >
-                    <Icon name="settings" size={20} />
-                    Configuración
-                  </Link>
+                  {user?.role === "admin" && (
+                    <Link
+                      to="/admin/products"
+                      className="mobile-nav-link"
+                      onClick={handleMobileMenuClose}
+                    >
+                      <Icon name="grid" size={20} />
+                      Panel de administración
+                    </Link>
+                  )}
                 </nav>
               )}
 

@@ -93,6 +93,58 @@ describe("POST /api/products (autorización)", () => {
   });
 });
 
+describe("PUT /api/products/:id", () => {
+  it("rechaza la actualización sin token", async () => {
+    const product = await createProduct();
+
+    const res = await request(app)
+      .put(`/api/products/${product._id}`)
+      .send({ price: 500 });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("rechaza la actualización de un usuario autenticado sin rol admin", async () => {
+    const { token } = await createUser();
+    const product = await createProduct();
+
+    const res = await request(app)
+      .put(`/api/products/${product._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ price: 500 });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("actualiza el producto cuando lo pide un admin", async () => {
+    const { token } = await createAdmin();
+    const product = await createProduct({ name: "Original", price: 100, stock: 5 });
+
+    const res = await request(app)
+      .put(`/api/products/${product._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ name: "Actualizado", price: 150, stock: 8 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ name: "Actualizado", price: 150, stock: 8 });
+
+    const stored = await Product.findById(product._id);
+    expect(stored.name).toBe("Actualizado");
+    expect(stored.price).toBe(150);
+  });
+
+  it("devuelve 404 al actualizar un producto inexistente", async () => {
+    const { token } = await createAdmin();
+
+    const res = await request(app)
+      .put("/api/products/64b64f1f1f1f1f1f1f1f1f1f")
+      .set("Authorization", authHeader(token))
+      .send({ price: 500 });
+
+    expect(res.status).toBe(404);
+  });
+});
+
 describe("DELETE /api/products/:id", () => {
   it("elimina un producto existente cuando lo pide un admin", async () => {
     const { token } = await createAdmin();

@@ -23,3 +23,10 @@ export async function updatePaymentMethod(id, paymentData) {
 export async function deletePaymentMethod(id) {
   await apiClient.delete(`/payment-methods/${id}`);
 }
+
+export async function chargePaymentMethod(id, amount) {
+  const { data } = await apiClient.post(`/payment-methods/${id}/charge`, {
+    amount,
+  });
+  return data;
+}
