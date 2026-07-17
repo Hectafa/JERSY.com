@@ -93,7 +93,7 @@ export default function Header() {
   };
 
   const handleRegister = () => {
-    console.log("Redirigir a registro");
+    navigate("/register");
     setIsUserMenuOpen(false);
     setIsMobileMenuOpen(false);
   };
