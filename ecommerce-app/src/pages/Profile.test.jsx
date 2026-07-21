@@ -52,13 +52,24 @@ describe("Profile (página)", () => {
     expect(screen.getByText("Página de login")).toBeInTheDocument();
   });
 
-  test("muestra el nombre y el rol del usuario autenticado", async () => {
+  test("muestra el nombre del usuario autenticado", async () => {
     seedAuthenticatedUser({ name: "Ada Lovelace", role: "customer" });
 
     renderProfileRoute();
 
-    expect(await screen.findByText("customer")).toBeInTheDocument();
+    expect(await screen.findByText("Acciones de la cuenta")).toBeInTheDocument();
     expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThan(0);
+  });
+
+  test("no muestra el rol del usuario (solo nombre y email)", async () => {
+    seedAuthenticatedUser({ name: "Ada Lovelace", role: "customer" });
+
+    renderProfileRoute();
+
+    await screen.findByText("Acciones de la cuenta");
+    expect(screen.queryByText("customer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Estado:")).not.toBeInTheDocument();
+    expect(screen.queryByText("Última conexión:")).not.toBeInTheDocument();
   });
 
   test("muestra 'No disponible' para el email porque el token no lo incluye", async () => {
@@ -66,7 +77,7 @@ describe("Profile (página)", () => {
 
     renderProfileRoute();
 
-    await screen.findByText("customer");
+    await screen.findByText("Acciones de la cuenta");
     expect(screen.getAllByText("No disponible").length).toBeGreaterThan(0);
   });
 
@@ -83,7 +94,7 @@ describe("Profile (página)", () => {
 
     renderProfileRoute();
 
-    await screen.findByText("customer");
+    await screen.findByText("Acciones de la cuenta");
     expect(screen.queryByText("Panel de administración")).not.toBeInTheDocument();
   });
 });

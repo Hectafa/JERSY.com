@@ -4,12 +4,14 @@ import {
   getUserById,
   createUser,
   updateUser,
+  updateAvatar,
   changePassword,
   deleteUser,
 } from "../controllers/userController.js";
 import validate from "../middlewares/validation.js";
 import isAdmin from "../middlewares/isAdminMiddleware.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
+import uploadAvatar from "../middlewares/uploadAvatar.js";
 import {
   userIdValidation,
   createUserValidation,
@@ -45,6 +47,15 @@ router.put(
   [...userIdValidation, ...updateUserValidation],
   validate,
   updateUser,
+);
+
+router.put(
+  "/users/:id/avatar",
+  authMiddleware,
+  userIdValidation,
+  validate,
+  uploadAvatar,
+  updateAvatar,
 );
 
 router.put(

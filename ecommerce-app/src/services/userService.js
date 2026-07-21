@@ -17,3 +17,14 @@ export async function changePassword(id, data) {
   const response = await apiClient.put(`/users/${id}/password`, data);
   return response.data;
 }
+
+//PUT /users/:id/avatar -> Subir/reemplazar la foto de perfil del usuario dueño del perfil
+export async function updateUserAvatar(id, file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const response = await apiClient.put(`/users/${id}/avatar`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}

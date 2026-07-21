@@ -1,5 +1,8 @@
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
+import { AVATARS_DIR } from "../middlewares/uploadAvatar.js";
 
 const generatePassword = async (password) => {
   const saltRounds = 10;
@@ -86,6 +89,43 @@ const updateUser = async (req, res, next) => {
   }
 };
 
+const updateAvatar = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const isOwner = req.user.userId === id;
+    const isAdminUser = req.user.role === "admin";
+
+    if (!isOwner && !isAdminUser) {
+      if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
+      return res.status(403).json({ message: "Unauthorized to update this user" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      await fs.promises.unlink(req.file.path).catch(() => {});
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.avatar && user.avatar.startsWith("/uploads/avatars/")) {
+      const oldPath = path.join(AVATARS_DIR, path.basename(user.avatar));
+      await fs.promises.unlink(oldPath).catch(() => {});
+    }
+
+    user.avatar = `/uploads/avatars/${req.file.filename}`;
+    await user.save();
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    res.status(200).json(userResponse);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const changePassword = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -127,4 +167,12 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-export { getUsers, getUserById, createUser, updateUser, changePassword, deleteUser };
+export {
+  getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  updateAvatar,
+  changePassword,
+  deleteUser,
+};

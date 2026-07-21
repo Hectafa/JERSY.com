@@ -1,13 +1,9 @@
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { resolveAvatarUrl } from "../../utils/media";
 import Button from "../common/Button";
 import "./ProfileCard.css";
-
-const ROLE_COLORS = {
-  admin: "#2563eb",
-  customer: "#22c55e",
-};
 
 function buildRoleActions(navigate) {
   return {
@@ -38,7 +34,7 @@ export default function ProfileCard({ user: userProp }) {
       <div className="profile-card">
         <div className="profile-header">
           <img
-            src={currentUser.avatar || "/img/user-placeholder.png"}
+            src={resolveAvatarUrl(currentUser.avatar)}
             alt={
               currentUser.displayName || currentUser.name || currentUser.email
             }
@@ -51,12 +47,6 @@ export default function ProfileCard({ user: userProp }) {
             <h2>
               {currentUser.displayName || currentUser.name || currentUser.email}
             </h2>
-            <span
-              className="profile-role-badge"
-              style={{ background: ROLE_COLORS[role] }}
-            >
-              {role}
-            </span>
           </div>
         </div>
         <div className="profile-info">
@@ -68,18 +58,6 @@ export default function ProfileCard({ user: userProp }) {
             <label>Nombre:</label>
             <span>
               {currentUser.displayName || currentUser.name || "No disponible"}
-            </span>
-          </div>
-          <div className="info-item">
-            <label>Estado:</label>
-            <span>{currentUser.isActive ? "Activo" : "Inactivo"}</span>
-          </div>
-          <div className="info-item">
-            <label>Última conexión:</label>
-            <span>
-              {currentUser.loginDate
-                ? new Date(currentUser.loginDate).toLocaleString()
-                : "No disponible"}
             </span>
           </div>
         </div>

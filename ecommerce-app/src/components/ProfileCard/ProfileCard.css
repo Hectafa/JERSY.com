@@ -83,12 +83,3 @@
   gap: 4px;
 }
 
-.profile-role-badge {
-  display: inline-block;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 12px;
-  margin-top: 4px;
-}

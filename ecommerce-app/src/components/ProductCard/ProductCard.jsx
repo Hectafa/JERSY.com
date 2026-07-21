@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { getProductImageUrl } from "../../utils/images";
 import Badge from "../common/Badge";
 import Button from "../common/Button";
 import "./ProductCard.css";
@@ -32,7 +33,7 @@ export default function ProductCard({ product, orientation = "vertical" }) {
     <div className={cardClass} data-testid={`product-card-${product._id}`}>
       <Link to={productLink} className="product-card-image-link">
         <img
-          src={imageURL || "/img/products/placeholder.svg"}
+          src={getProductImageUrl(imageURL)}
           alt={name}
           className="product-card-image"
           width="300"

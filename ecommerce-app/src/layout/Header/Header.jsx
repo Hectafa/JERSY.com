@@ -188,8 +188,7 @@ export default function Header() {
             </button>
             {/* Logo */}
             <Link to="/" className="logo">
-              eShop
-              <span className="logo-extension">.com</span>
+              JERSY
             </Link>
             {/* Desktop Search */}
             <div className="search-container desktop-only">
@@ -374,7 +373,7 @@ export default function Header() {
             {/* Mobile Menu Header */}
             <div className="mobile-menu-header">
               <div className="mobile-menu-logo">
-                <span className="logo">eShop.com</span>
+                <span className="logo">JERSY</span>
               </div>
               <button
                 className="mobile-menu-close"

@@ -101,6 +101,7 @@ export default function BannerCarousel({ banners = [] }) {
                     ? `url(${banner.image})`
                     : undefined,
                   backgroundColor: banner.backgroundColor,
+                  backgroundPosition: banner.backgroundPosition,
                 }}
                 aria-hidden={index !== currentIndex}
               >

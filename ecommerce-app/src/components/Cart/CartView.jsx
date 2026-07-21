@@ -1,4 +1,5 @@
 import { useCart } from "../../context/CartContext";
+import { getProductImageUrl } from "../../utils/images";
 import Button from "../common/Button";
 import Icon from "../common/Icon/Icon";
 
@@ -21,7 +22,7 @@ export default function CartView() {
         >
           <div className="cart-item-image">
             <img
-              src={item.product.imageURL || "/img/products/placeholder.svg"}
+              src={getProductImageUrl(item.product.imageURL)}
               alt={item.product.name}
               loading="lazy"
             />

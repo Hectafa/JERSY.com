@@ -50,40 +50,6 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
   if (isMobile) {
     return (
       <div className="mobile-navigation">
-        {/* Ofertas especiales */}
-        <Link
-          to="/offers"
-          className="mobile-nav-link special"
-          onClick={onLinkClick}
-        >
-          <Icon name="tag" size={20} />
-          Ofertas del día
-        </Link>
-        <Link
-          to="/new"
-          className="mobile-nav-link special"
-          onClick={onLinkClick}
-        >
-          <Icon name="sparkles" size={20} />
-          Novedades
-        </Link>
-        <Link
-          to="/bestsellers"
-          className="mobile-nav-link special"
-          onClick={onLinkClick}
-        >
-          <Icon name="star" size={20} />
-          Más vendidos
-        </Link>
-        <Link
-          to="/flash-sale"
-          className="mobile-nav-link special"
-          onClick={onLinkClick}
-        >
-          <Icon name="zap" size={20} />
-          Flash sale
-        </Link>
-
         {/* Categorías principales */}
         {loading && <Loading>Cargando categorías...</Loading>}
         {!loading && error && (
@@ -165,22 +131,6 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
               </div>
             )}
           </div>
-
-          {/* Navegación horizontal */}
-          <nav className="categories-nav">
-            <Link to="/offers" className="nav-link special">
-              Ofertas del día
-            </Link>
-            <Link to="/new" className="nav-link special">
-              Novedades
-            </Link>
-            <Link to="/bestsellers" className="nav-link special">
-              Más vendidos
-            </Link>
-            <Link to="/flash-sale" className="nav-link special">
-              Flash sale
-            </Link>
-          </nav>
         </div>
       </div>
     </div>

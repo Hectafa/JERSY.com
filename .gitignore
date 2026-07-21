@@ -18,3 +18,7 @@ ecommerce-app/cypress/videos/
 ecommerce-app/cypress/screenshots/
 ecommerce-app/cypress/downloads/
 ecommerce-app/cypress.env.json
+
+# Uploaded user content
+ecommerce-api/public/uploads/*
+!ecommerce-api/public/uploads/.gitkeep

@@ -1,34 +1,35 @@
 [
   {
-    "title": "Nuevas colecciones de verano",
-    "subtitle": "Descubre nuevas tendencias en moda",
-    "image": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop",
-    "buttonText": "Ver colección",
+    "title": "CLASICOS ",
+    "subtitle": "Viste los clasicos mundiales",
+    "image": "https://mxc.com.mx/wp-content/uploads/2025/06/Nuevo-proyecto-11-.png",
+    "buttonText": "Comprar Ahora",
     "buttonLink": "/collections/summer",
-    "backgroundColor": "#26336c"
+    "backgroundColor": "#26336c",
+    "backgroundPosition": "center 15%"
   },
   {
-    "title": "Ofertas Especiales",
-    "subtitle": "Hasta 50% de descuento en productos seleccionados",
-    "image": "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&h=600&fit=crop",
-    "buttonText": "Ver Ofertas",
+    "title": "CLUBES",
+    "subtitle": "Busca tu club favorito",
+    "image": "https://cloudfront-us-east-1.images.arcpublishing.com/infobae/KRHMRQRWPBCE7DGDE3POCQQJ3I.jpg",
+    "buttonText": "Comprar ahora",
     "buttonLink": "/offers",
     "backgroundColor": "#8677b5"
   },
   {
-    "title": "Tecnología Innovadora",
-    "subtitle": "Los últimos gadgets y dispositivos electrónicos",
-    "image": "https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=1200&h=600&fit=crop",
-    "buttonText": "Explorar",
+    "title": "SELECCIONES",
+    "subtitle": "Apoya a tu país",
+    "image": "https://ichef.bbci.co.uk/ace/ws/640/cpsprodpb/B04A/production/_99003154_banderas1.jpg.webp",
+    "buttonText": "Comprar ahora",
     "buttonLink": "/tech",
     "backgroundColor": "#3eb7ea"
   },
   {
     "title": "Envío Gratis",
-    "subtitle": "En compras superiores a $50",
-    "image": "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=1200&h=600&fit=crop",
+    "subtitle": "En compras superiores a $799",
+    "image": "https://cmsphoto.ww-cdn.com/superstatic/81328/art/grande/40930198-34559071.jpg?v=1576776980.5958636",
     "buttonText": "Comprar Ahora",
-    "buttonLink": "/free-shipping",
+    "buttonLink": "/",
     "backgroundColor": "#79bf87"
   }
 ]

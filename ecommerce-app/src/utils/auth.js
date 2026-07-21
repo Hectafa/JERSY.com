@@ -30,8 +30,10 @@ export function clearToken() {
 export function decodeToken(token) {
   try {
     const payloadBase64 = token.split(".")[1];
-    const payload = JSON.parse(atob(payloadBase64));
-    return payload;
+    const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    const json = new TextDecoder("utf-8").decode(bytes);
+    return JSON.parse(json);
   } catch (error) {
     return null;
   }

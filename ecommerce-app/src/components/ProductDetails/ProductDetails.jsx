@@ -5,6 +5,7 @@ import { useCart } from "../../context/CartContext";
 import Breadcrumb from "../../layout/Breadcrumb/Breadcrumb";
 import { getProductById } from "../../services/productsService";
 import { addProductToWishlist } from "../../services/wishlistService";
+import { getProductImageUrl } from "../../utils/images";
 import Badge from "../common/Badge";
 import Button from "../common/Button";
 import ErrorMessage from "../common/ErrorMessage/ErrorMessage";
@@ -129,7 +130,7 @@ export default function ProductDetails({ productId }) {
       <div className="product-details-main">
         <div className="product-details-image">
           <img
-            src={imageURL || "/img/products/placeholder.svg"}
+            src={getProductImageUrl(imageURL)}
             alt={name}
             width="600"
             height="600"
