@@ -1,0 +1,63 @@
+config:
+  target: "http://localhost:4000" # Local únicamente. NUNCA apuntar al deployment de Render.
+
+  plugins:
+    ensure: {}
+    metrics-by-endpoint: {}
+
+  ensure:
+    # SLOs (Service Level Objectives): reglas de "pasa / no pasa" para la demo.
+    # Si el p95, p99 o la tasa de error superan estos umbrales, Artillery
+    # termina con un código de salida distinto de 0 (útil para integrarlo en CI).
+    thresholds:
+      - http.response_time.p95: 500 # 95% de las respuestas deben responder en menos de 500ms
+      - http.response_time.p99: 1000 # 99% de las respuestas deben responder en menos de 1000ms
+    maxErrorRate: 1 # máximo 1% de requests con error (respuestas 4xx/5xx)
+
+  phases:
+    - name: "Warm up"
+      # Carga baja para "calentar" el proceso Node (JIT, pool de conexiones a
+      # Mongo, etc.) antes de medir en serio, así no contaminamos las
+      # métricas de las fases siguientes con el arranque en frío.
+      duration: 30
+      arrivalRate: 2
+
+    - name: "Ramp up (load)"
+      # Sube progresivamente desde una carga mínima hasta la carga esperada,
+      # para observar cómo se comporta la API mientras crece el tráfico.
+      duration: 60
+      arrivalRate: 2
+      rampTo: 20
+
+    - name: "Sustained load"
+      # Mantiene constante la carga esperada: nos dice si la API aguanta de
+      # forma estable el tráfico "normal" durante un período sostenido.
+      duration: 120
+      arrivalRate: 20
+
+    - name: "Stress"
+      # Sube deliberadamente MÁS ALLÁ de la carga esperada para buscar el
+      # punto de quiebre: dónde empiezan a fallar los SLOs o a degradarse
+      # la API. Esto es una prueba de estrés, no de carga normal.
+      duration: 60
+      arrivalRate: 20
+      rampTo: 100
+
+scenarios:
+  - name: "Listar productos"
+    weight: 60
+    flow:
+      - get:
+          url: "/api/products"
+
+  - name: "Buscar productos"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/products/search?q=shirt"
+
+  - name: "Listar categorías"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/categories"
