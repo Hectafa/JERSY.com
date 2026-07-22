@@ -19,29 +19,29 @@ config:
       # Carga baja para "calentar" el proceso Node (JIT, pool de conexiones a
       # Mongo, etc.) antes de medir en serio, así no contaminamos las
       # métricas de las fases siguientes con el arranque en frío.
-      duration: 30
-      arrivalRate: 2
+      duration: 5
+      arrivalRate: 50
 
     - name: "Ramp up (load)"
       # Sube progresivamente desde una carga mínima hasta la carga esperada,
       # para observar cómo se comporta la API mientras crece el tráfico.
-      duration: 60
-      arrivalRate: 2
-      rampTo: 20
+      duration: 30
+      arrivalRate: 100
+      rampTo: 1000
 
     - name: "Sustained load"
       # Mantiene constante la carga esperada: nos dice si la API aguanta de
       # forma estable el tráfico "normal" durante un período sostenido.
-      duration: 120
-      arrivalRate: 20
+      duration: 60
+      arrivalRate: 500
 
     - name: "Stress"
       # Sube deliberadamente MÁS ALLÁ de la carga esperada para buscar el
       # punto de quiebre: dónde empiezan a fallar los SLOs o a degradarse
       # la API. Esto es una prueba de estrés, no de carga normal.
       duration: 60
-      arrivalRate: 20
-      rampTo: 100
+      arrivalRate: 100
+      rampTo: 1000
 
 scenarios:
   - name: "Listar productos"
