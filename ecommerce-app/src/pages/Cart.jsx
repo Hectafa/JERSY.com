@@ -3,12 +3,16 @@ import CartView from "../components/Cart/CartView";
 import Button from "../components/common/Button";
 import Icon from "../components/common/Icon/Icon";
 import { useCart } from "../context/CartContext";
+import { freeShipping } from "../constants/shipping";
 import "./Cart.css";
 
 export default function Cart() {
-  const { items, count, total, clearCart } = useCart();
+  const { items, total, clearCart } = useCart();
 
   const navigate = useNavigate();
+
+  const remainingForFreeShipping = Math.max(0, freeShipping - total);
+  const freeShippingProgress = Math.min(100, (total / freeShipping) * 100);
 
   if (items?.length === 0) {
     return (
@@ -31,9 +35,6 @@ export default function Cart() {
           <h1>Carrito de Compras</h1>
         </div>
         <div className="cart-header-info">
-          <span className="cart-items-count">
-            {count} {count === 1 ? "artículo" : "artículos"}
-          </span>
           <Button
             variant="ghost"
             className="danger clear-cart-btn"
@@ -44,6 +45,33 @@ export default function Cart() {
             <Icon name="trash" size={18} />
             <span>Vaciar carrito</span>
           </Button>
+        </div>
+      </div>
+
+      <div className="free-shipping-bar"
+      data-testid="free-shipping-bar">
+        <div className="free-shipping-bar-track">
+          <div
+          className="free-shipping-bar-fill"
+          style={{width: `${freeShippingProgress}%` }}
+          />
+        </div>
+        <div className="free-shipping-bar-footer">
+        <p className="free-shipping-bar-text">
+          {remainingForFreeShipping > 0
+          ? `Te faltan $${remainingForFreeShipping.toFixed
+          (2)} para conseguir el envío gratis`
+          : "¡Envío gratis!"}
+        </p>
+        <Button
+            variant="secondary"
+            onClick={() => navigate("/")}
+            title="Seguir comprando"
+            size="sm"
+            data-testid="cart-continue-shopping-button">
+            <Icon name="arrowLeft" size={16} />
+            <span>Seguir comprando</span>
+        </Button>
         </div>
       </div>
 

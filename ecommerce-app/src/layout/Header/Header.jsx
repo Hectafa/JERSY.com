@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import Icon from "../../components/common/Icon/Icon";
 import { useCart } from "../../context/CartContext";
 import { useTheme } from "../../context/ThemeContext";
+import { resolveAvatarUrl } from "../../utils/media";
 import Navigation from "../Navigation/Navigation";
 import "./Header.css";
 
@@ -232,6 +233,12 @@ export default function Header() {
                   aria-expanded={isUserMenuOpen}
                 >
                   <div className="user-avatar">
+                    {isAuthenticated && user?.avatar ? (
+                      <img
+                      src={resolveAvatarUrl(user.avatar)}
+                      alt={getDisplayName(user)}
+                      />
+                    ) : (
                     <span className="user-initials">
                       {isAuthenticated ? (
                         getUserInitials(user)
@@ -239,6 +246,7 @@ export default function Header() {
                         <Icon name="user" size={16} />
                       )}
                     </span>
+                    )}
                   </div>
                   <div className="user-text">
                     <span className="greeting">
@@ -288,9 +296,16 @@ export default function Header() {
                       <div className="user-section">
                         <div className="user-profile">
                           <div className="user-avatar large">
+                            {user?.avatar ? (
+                              <img
+                              src={resolveAvatarUrl(user.avatar)}
+                              alt={getDisplayName(user)}
+                              />
+                            ) : (
                             <span className="user-initials">
                               {getUserInitials(user)}
                             </span>
+                            )}
                           </div>
                           <div className="user-details">
                             <span className="user-name">
@@ -305,19 +320,28 @@ export default function Header() {
                             <Icon name="user" size={16} />
                             Mi Cuenta
                           </Link>
-                          <Link to="/orders" className="user-link">
-                            <Icon name="package" size={16} />
-                            Mis Pedidos
-                          </Link>
-                          <Link to="/wishlist" className="user-link">
-                            <Icon name="heart" size={16} />
-                            Lista de Deseos
-                          </Link>
-                          {user?.role === "admin" && (
-                            <Link to="/admin/products" className="user-link">
-                              <Icon name="grid" size={16} />
-                              Panel de administración
-                            </Link>
+                          {user?.role === "admin" ? (
+                            <>
+                              <Link to="/admin/users" className="user-link">
+                                <Icon name="grid" size={16} />
+                                Usuarios
+                              </Link>
+                              <Link to="/admin/orders" className="user-link">
+                                <Icon name="package" size={16} />
+                                Pedidos
+                              </Link>
+                            </>
+                          ) : (
+                            <>
+                              <Link to="/orders" className="user-link">
+                                <Icon name="package" size={16} />
+                                Mis Pedidos
+                              </Link>
+                              <Link to="/wishlist" className="user-link">
+                                <Icon name="heart" size={16} />
+                                Lista de Deseos
+                              </Link>
+                            </>
                           )}
                         </div>
 
@@ -418,15 +442,20 @@ export default function Header() {
                 ) : (
                   <div className="mobile-user-info">
                     <div className="mobile-user-avatar">
-                      {
+                      {user?.avatar ? (
+                        <img
+                        src={resolveAvatarUrl(user.avatar)}
+                        alt={getDisplayName(user)}
+                        />
+                      ) : (
                         <span className="user-initials">
                           {getUserInitials(user)}
                         </span>
-                      }
+                      )}
                     </div>
                     <div className="mobile-user-details">
                       <span className="mobile-user-name">
-                        {getUserInitials(user)}
+                        {getDisplayName(user)}
                       </span>
                       <span className="mobile-user-email">{user?.email}</span>
                     </div>
@@ -455,31 +484,44 @@ export default function Header() {
                     <Icon name="user" size={20} />
                     Mi Perfil
                   </Link>
-                  <Link
-                    to="/orders"
-                    className="mobile-nav-link"
-                    onClick={handleMobileMenuClose}
-                  >
-                    <Icon name="package" size={20} />
-                    Mis Pedidos
-                  </Link>
-                  <Link
-                    to="/wishlist"
-                    className="mobile-nav-link"
-                    onClick={handleMobileMenuClose}
-                  >
-                    <Icon name="heart" size={20} />
-                    Lista de Deseos
-                  </Link>
-                  {user?.role === "admin" && (
-                    <Link
-                      to="/admin/products"
-                      className="mobile-nav-link"
-                      onClick={handleMobileMenuClose}
-                    >
-                      <Icon name="grid" size={20} />
-                      Panel de administración
-                    </Link>
+                  {user?.role === "admin" ? (
+                    <>
+                      <Link
+                        to="/admin/users"
+                        className="mobile-nav-link"
+                        onClick={handleMobileMenuClose}
+                      >
+                        <Icon name="grid" size={20} />
+                        Usuarios
+                      </Link>
+                      <Link
+                        to="/admin/orders"
+                        className="mobile-nav-link"
+                        onClick={handleMobileMenuClose}
+                      >
+                        <Icon name="package" size={20} />
+                        Pedidos
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/orders"
+                        className="mobile-nav-link"
+                        onClick={handleMobileMenuClose}
+                      >
+                        <Icon name="package" size={20} />
+                        Mis Pedidos
+                      </Link>
+                      <Link
+                        to="/wishlist"
+                        className="mobile-nav-link"
+                        onClick={handleMobileMenuClose}
+                      >
+                        <Icon name="heart" size={20} />
+                        Lista de Deseos
+                      </Link>
+                    </>
                   )}
                 </nav>
               )}

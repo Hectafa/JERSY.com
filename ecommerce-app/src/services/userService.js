@@ -6,6 +6,12 @@ export async function getUserProfile(id) {
   return response.data;
 }
 
+//GET /users (admin) -> todos los usuarios registrados (sin cuentas de prueba)
+export async function getAllUsers() {
+  const response = await apiClient.get("/users");
+  return response.data;
+}
+
 //PUT /users/:id -> actualizar datos del usuario del propio perfil (name/email) desde el backend
 export async function updateUserProfile(id, data) {
   const response = await apiClient.put(`/users/${id}/`, data);

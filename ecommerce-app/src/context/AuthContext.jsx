@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { login as loginService } from "../services/authService";
+import { getUserProfile } from "../services/userService";
 import {
   clearToken,
   decodeToken,
@@ -9,6 +10,18 @@ import {
 } from "../utils/auth";
 
 const AuthContext = createContext(null);
+
+// El JWT solo trae userId/name/role; avatar y email viven en el perfil del
+// backend, así que hay que pedirlos aparte para que sobrevivan un reload.
+function hydrateProfile(userId, setUser) {
+  getUserProfile(userId)
+    .then((profile) => {
+      setUser((prev) =>
+        prev ? { ...prev, avatar: profile.avatar, email: profile.email } : prev,
+      );
+    })
+    .catch(() => {});
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -31,6 +44,7 @@ export function AuthProvider({ children }) {
     const payload = decodeToken(token);
     if (payload) {
       setUser({ id: payload.userId, name: payload.name, role: payload.role });
+      hydrateProfile(payload.userId, setUser);
     }
     setLoading(false);
   }, []);
@@ -54,6 +68,7 @@ export function AuthProvider({ children }) {
     const payload = decodeToken(token);
     if (!payload) throw new Error("Token inválido del backend");
     setUser({ id: payload.userId, name: payload.name, role: payload.role });
+    hydrateProfile(payload.userId, setUser);
   }, []);
 
   const logout = useCallback(() => {

@@ -4,17 +4,22 @@ import Button from "../common/Button";
 import Icon from "../common/Icon/Icon";
 
 export default function CartView() {
-  const { items, removeItem, updateQuantity } = useCart();
+  const { items, count, removeItem, updateQuantity } = useCart();
 
   return (
     <div className="cart-view" data-testid="cart-view">
       <div className="cart-view-header">
         <h2>
-          {items.length} {items.length === 1 ? "artículo" : "artículos"}
+          {count} {count === 1 ? "artículo" : "artículos"}
         </h2>
       </div>
 
-      {items.map((item) => (
+      {items.map((item) => {
+        const stock = item.product.stock;
+        const hasStockLimit = typeof stock === "number";
+        const atStockLimit = hasStockLimit && item.quantity >= stock;
+
+        return (
         <div
           className="cart-item"
           key={item.product._id}
@@ -33,6 +38,7 @@ export default function CartView() {
             <p className="cart-item-price">{`$${item.product.price.toFixed(2)}`}</p>
           </div>
 
+        <div className="cart-item-quantity-wrapper">
           <div className="cart-item-quantity">
             <Button
               variant="secondary"
@@ -50,13 +56,27 @@ export default function CartView() {
             <Button
               variant="secondary"
               size="sm"
+              disabled={atStockLimit}
               onClick={() =>
                 updateQuantity(item.product._id, item.quantity + 1)
+              }
+              title={
+                atStockLimit
+                ? `Solo hay ${stock} unidades disponibles`
+                : undefined
               }
               data-testid={`cart-item-increase-${item.product._id}`}
             >
               <Icon name="plus" size={15}></Icon>
             </Button>
+            </div>
+            {atStockLimit && (
+              <span
+              className="cart-item-stock-warning"
+              data-testid={`cart-item-stock-warning-${item.product._id}`}>
+                Alcanzaste el máximo disponible en stock ({stock})
+              </span>
+            )}
           </div>
 
           <div className="cart-item-total">
@@ -74,7 +94,8 @@ export default function CartView() {
             <Icon name="trash" size={16} />
           </Button>
         </div>
-      ))}
+    );
+  })}
     </div>
   );
 }

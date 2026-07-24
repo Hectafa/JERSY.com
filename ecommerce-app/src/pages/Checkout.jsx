@@ -9,6 +9,7 @@ import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
 import Loading from "../components/common/Loading/Loading";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { shippingRate, freeShipping } from "../constants/shipping";
 import { createOrder, updateOrderStatus } from "../services/orderService";
 import {
   chargePaymentMethod,
@@ -41,11 +42,9 @@ export default function Checkout() {
   // Se realizan en cada render para asegurar consistencia.
   const subtotal = typeof total === "number" ? total : 0;
   const TAX_RATE = 0.16; // IVA 16%
-  const SHIPPING_RATE = 350; // Costo de envío estándar
-  const FREE_SHIPPING_THRESHOLD = 1000; // Envío gratis si subtotal >= 1000
 
   const taxAmount = parseFloat((subtotal * TAX_RATE).toFixed(2));
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_RATE;
+  const shippingCost = subtotal >= freeShipping ? 0 : shippingRate;
   const grandTotal = parseFloat(
     (subtotal + taxAmount + shippingCost).toFixed(2)
   );

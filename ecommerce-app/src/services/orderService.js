@@ -23,3 +23,11 @@ export async function updateOrderStatus(id, data) {
   const response = await apiClient.put(`/orders/${id}`, data);
   return response.data;
 }
+
+// GET /orders (admin) → todas las órdenes, opcionalmente filtradas por status
+export async function getAllOrders(status) {
+  const response = await apiClient.get("/orders", {
+    params: status ? { status } : undefined,
+  });
+  return response.data;
+}

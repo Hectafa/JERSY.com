@@ -3,11 +3,13 @@ import Product from "../models/Product.js";
 
 const getOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find()
+    const filter = req.query.status ? { status: req.query.status } : {};
+    const orders = await Order.find(filter)
       .populate("user")
       .populate("products.productId")
       .populate("address")
-      .populate("paymentMethod");
+      .populate("paymentMethod")
+      .sort({ createdAt: -1});
     res.json(orders);
   } catch (error) {
     next(error);

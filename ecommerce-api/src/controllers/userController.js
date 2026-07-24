@@ -9,10 +9,15 @@ const generatePassword = async (password) => {
   return await bcrypt.hash(password, saltRounds);
 };
 
+const testEmail = ["test.com", "example.com"];
+const isTestEmail = (email = "") =>
+  testEmail.some((domain) => email.toLowerCase().
+endsWith(`@${domain}`));
+
 const getUsers = async (req, res, next) => {
   try {
     const users = await User.find().select("-password");
-    res.status(200).json(users);
+    res.status(200).json(users.filter((u) => !isTestEmail(u.email)));
   } catch (error) {
     next(error);
   }

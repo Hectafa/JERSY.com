@@ -13,6 +13,8 @@ import Loading from "../common/Loading/Loading";
 // para reducir el bundle inicial. Home/Login/Register/ProtectedRoute se
 // mantienen eager porque son la entrada más común o wrappers triviales.
 const AdminProducts = lazy(() => import("../../pages/AdminProducts"));
+const AdminOrders = lazy(() => import("../../pages/AdminOrders"));
+const AdminUsers = lazy(() => import("../../pages/AdminUsers"));
 const Cart = lazy(() => import("../../pages/Cart"));
 const CategoryPage = lazy(() => import("../../pages/CategoryPage"));
 const ChangePassword = lazy(() => import("../ChangePassword/ChangePassword"));
@@ -107,6 +109,22 @@ function App() {
                 element={
                   <ProtectedRoute redirectTo="/login" allowedRoles={["admin"]}>
                     <AdminProducts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute redirectTo="/login" allowedRoles={["admin"]}>
+                    <AdminUsers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/orders"
+                element={
+                  <ProtectedRoute redirectTo="/login" allowedRoles={["admin"]}>
+                    <AdminOrders />
                   </ProtectedRoute>
                 }
               />

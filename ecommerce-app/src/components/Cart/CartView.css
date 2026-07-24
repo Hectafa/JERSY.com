@@ -162,6 +162,23 @@
   color: var(--accent);
 }
 
+.cart-item-quantity button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cart-item-quantity-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs, 4px);
+}
+
+.cart-item-stock-warning {
+  font-size: 0.75rem;
+  color: var(--danger, #e53e3e);
+  font-weight: 500;
+}
+
 .cart-item-total {
   font-weight: 600;
   font-size: 1.1rem;
