@@ -2,6 +2,7 @@ import { useCart } from "../../context/CartContext";
 import { getProductImageUrl } from "../../utils/images";
 import Button from "../common/Button";
 import Icon from "../common/Icon/Icon";
+import "./CartView.css";
 
 export default function CartView() {
   const { items, count, removeItem, updateQuantity } = useCart();

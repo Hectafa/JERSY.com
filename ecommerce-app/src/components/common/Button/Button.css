@@ -4,14 +4,14 @@
   align-items: center;
   justify-content: center;
   gap: calc(var(--gap) * 0.5);
-  padding: calc(var(--gap) * 0.75) var(--gap);
+  padding: calc(var(--gap) * 0.75) calc(var(--gap) * 1.25);
   border: none;
-  border-radius: var(--radius);
+  border-radius: 0;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -52,12 +52,12 @@
 }
 
 .btn-danger {
-  background: #dc3545;
+  background: var(--color-red);
   color: white;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #c82333;
+  background: color-mix(in srgb, var(--color-red) 85%, black);
 }
 
 /* Button Sizes */

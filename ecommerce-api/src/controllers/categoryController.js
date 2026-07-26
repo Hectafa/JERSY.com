@@ -75,7 +75,7 @@ const getProductsByCategoryAndChildren = async (req, res, next) => {
     const { id } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
-    const category = await Category.findById(id);
+    const category = await Category.findById(id).populate("parentCategory");
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }

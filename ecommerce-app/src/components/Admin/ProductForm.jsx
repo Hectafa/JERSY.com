@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Button from "../common/Button";
 import Input from "../common/Input";
+import { uploadProductImage } from "../../services/productsService";
+import { getProductImageUrl } from "../../utils/images";
 
 const emptyProduct = {
   name: "",
@@ -19,14 +21,68 @@ export default function ProductForm({
   isEdit = false,
 }) {
   const [formData, setFormData] = useState({ ...emptyProduct, ...initialValues });
+  const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(null);
+  // Categoría principal y subcategoría (opcional) se manejan como selects
+  // separados en la UI, pero formData.category sigue siendo un solo campo:
+  // guarda la subcategoría si se eligió, o la principal si no.
+  const [mainCategory, setMainCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
+
+  const mainCategories = categories.filter((c) => !c.parentCategory);
+  const getSubcategories = (parentId) =>
+    categories.filter((c) => c.parentCategory && c.parentCategory._id === parentId);
 
   useEffect(() => {
     setFormData({ ...emptyProduct, ...initialValues });
-  }, [initialValues]);
+
+    // Al editar, si la categoría guardada es una subcategoría, preseleccionamos
+    // también su categoría principal para que ambos selects queden correctos.
+    const currentId = initialValues.category || "";
+    const currentCategory = categories.find((c) => c._id === currentId);
+
+    if (currentCategory?.parentCategory) {
+      setMainCategory(currentCategory.parentCategory._id);
+      setSubCategory(currentCategory._id);
+    } else {
+      setMainCategory(currentId);
+      setSubCategory("");
+    }
+  }, [initialValues, categories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleMainCategoryChange = (e) => {
+    const value = e.target.value;
+    setMainCategory(value);
+    setSubCategory("");
+    setFormData((prev) => ({ ...prev, category: value }));
+  };
+
+  const handleSubCategoryChange = (e) => {
+    const value = e.target.value;
+    setSubCategory(value);
+    setFormData((prev) => ({ ...prev, category: value || mainCategory }));
+  };
+
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImageError(null);
+    setUploading(true);
+    try {
+      const { imageURL } = await uploadProductImage(file);
+      setFormData((prev) => ({ ...prev, imageURL }));
+    } catch (error) {
+      setImageError("No se pudo subir la imagen. Intenta con otro archivo.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
   };
 
   const handleSubmit = (e) => {
@@ -85,28 +141,76 @@ export default function ProductForm({
         name="imageURL"
         value={formData.imageURL}
         onChange={handleChange}
+        placeholder="https://...o sube un archivo abajo"
       />
 
       <div className="input-group">
-        <label htmlFor="category" className="input-label">
+        <label htmlFor="imageFile" className="input-label">
+          subir imagen
+        </label>
+        <input
+        id="imageFile"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="input-field"
+        onChange={handleImageFileChange}
+        disabled={uploading}
+        />
+        {uploading && <span>Subiendo imagen...</span>}
+        {imageError && <span className="field-error">{imageError}</span>}
+      </div>
+
+      {formData.imageURL && (
+        <img
+        src={getProductImageUrl(formData.imageURL)}
+        alt="Vista previa"
+        style={{ maxWidth: "160px", display: "block", marginBottom: "1rem" }}
+        />
+      )}
+
+      <div className="input-group">
+        <label htmlFor="mainCategory" className="input-label">
           Categoría
         </label>
         <select
-          id="category"
-          name="category"
+          id="mainCategory"
+          name="mainCategory"
           className="input-field"
-          value={formData.category}
-          onChange={handleChange}
+          value={mainCategory}
+          onChange={handleMainCategoryChange}
           required
         >
           <option value="">Selecciona una categoría</option>
-          {categories.map((category) => (
+          {mainCategories.map((category) => (
             <option key={category._id} value={category._id}>
               {category.name}
             </option>
           ))}
         </select>
       </div>
+
+      {/* Subcategoría opcional: solo se muestra si la categoría principal tiene hijas */}
+      {mainCategory && getSubcategories(mainCategory).length > 0 && (
+        <div className="input-group">
+          <label htmlFor="subCategory" className="input-label">
+            Subcategoría (opcional)
+          </label>
+          <select
+            id="subCategory"
+            name="subCategory"
+            className="input-field"
+            value={subCategory}
+            onChange={handleSubCategoryChange}
+          >
+            <option value="">Sin subcategoría</option>
+            {getSubcategories(mainCategory).map((subcat) => (
+              <option key={subcat._id} value={subcat._id}>
+                {subcat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="form-actions">
         <Button type="submit">

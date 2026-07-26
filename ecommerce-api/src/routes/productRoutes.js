@@ -6,7 +6,9 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  uploadProductImageController,
 } from "../controllers/productController.js";
+import uploadProductImage from "../middlewares/uploadProductImage.js";
 import validate from "../middlewares/validation.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import isAdmin from "../middlewares/isAdminMiddleware.js";
@@ -23,6 +25,14 @@ router.get("/products/search", searchProducts);
 router.get("/products", getProducts);
 
 router.get("/products/:id", productIdValidation, validate, getProductById);
+
+router.post(
+  "/products/upload-image",
+  authMiddleware,
+  isAdmin,
+  uploadProductImage,
+  uploadProductImageController,
+);
 
 router.post(
   "/products",

@@ -36,6 +36,23 @@ describe("GET /api/categories/:id/products", () => {
     );
   });
 
+  it("popula parentCategory para que el frontend pueda mostrar 'Padre: Hija'", async () => {
+    const parent = await createCategory({ name: "Clubes" });
+    const child = await Category.create({
+      name: "Liga MX",
+      description: "Subcategoría",
+      parentCategory: parent._id,
+    });
+
+    const res = await request(app).get(`/api/categories/${child._id}/products`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.category.parentCategory).toMatchObject({
+      _id: parent._id.toString(),
+      name: "Clubes",
+    });
+  });
+
   it("devuelve 404 para una categoría inexistente", async () => {
     const res = await request(app).get(
       "/api/categories/64b64f1f1f1f1f1f1f1f1f1f/products",

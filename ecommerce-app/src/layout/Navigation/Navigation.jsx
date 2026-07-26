@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../../components/common/Icon/Icon";
 import ErrorMessage from "../../components/common/ErrorMessage/ErrorMessage";
@@ -11,6 +11,7 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +33,19 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
     loadCategories();
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -77,11 +91,10 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
       <div className="container">
         <div className="navigation-content">
           {/* Menú de todas las categorías */}
-          <div className="categories-dropdown">
+          <div className="categories-dropdown" ref={dropdownRef}>
             <button
               className="categories-menu-btn"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
             >
               <Icon name="menu" size={16} />
               <span>Todas las categorías</span>
@@ -105,6 +118,7 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
                       <Link
                         to={`/category/${category._id}`}
                         className="category-link main-category"
+                        onClick={() => setIsDropdownOpen(false)}
                       >
                         {category.name}
                         {subcategories.length > 0 && (
@@ -119,6 +133,7 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
                               key={subcat._id}
                               to={`/category/${subcat._id}`}
                               className="category-link sub-category"
+                              onClick={() => setIsDropdownOpen(false)}
                             >
                               {subcat.name}
                             </Link>

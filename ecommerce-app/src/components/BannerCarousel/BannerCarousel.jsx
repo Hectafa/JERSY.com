@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import "./BannerCarousel.css";
 import Button from "../common/Button";
 import Icon from "../common/Icon/Icon";
 
 export default function BannerCarousel({ banners = [] }) {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -114,10 +116,7 @@ export default function BannerCarousel({ banners = [] }) {
                       <Button
                         variant="primary"
                         size="large"
-                        onClick={() => {
-                          console.log(`Navegando a: ${banner.buttonLink}`);
-                          // Aquí iría la navegación real
-                        }}
+                        onClick={() => navigate(banner.buttonLink)}
                         aria-label={`${banner.buttonText} - ${banner.title}`}
                       >
                         {banner.buttonText}

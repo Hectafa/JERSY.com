@@ -25,10 +25,11 @@ body {
   /* Colores de la paleta */
   --color-white: #ffffff;
   --color-black: #000000;
-  --color-strong-blue: #26336c;
+  --color-strong-blue: #1d3a8a;
   --color-purple: #8677b5;
   --color-pink: #d38fb9;
   --color-yellow: #e7e000;
+  --color-gold: #f5c518;
   --color-green: #79bf87;
   --color-blue: #3eb7ea;
   --color-red: #dc2626;
@@ -38,15 +39,17 @@ body {
   --color-dark: #1f2937;
   --color-darker: #111827;
 
-  /* Tema claro */
-  --bg: #f8fafc;
+  /* Tema claro: base monocroma + acento azul/dorado */
+  --bg: #f5f5f5;
   --surface: #ffffff;
-  --text: #0f172a;
-  --muted: #475569;
-  --border: #cbd5e1;
+  --text: #111111;
+  --muted: #6b6b6b;
+  --border: #e0e0e0;
   --accent: var(--color-strong-blue);
   --accent-contrast: #ffffff;
-  --accent-rgb: 38, 51, 108;
+  --accent-rgb: 29, 58, 138;
+  --accent-secondary: var(--color-gold);
+  --accent-secondary-contrast: #111111;
 
   /* Variables adicionales */
   --radius: 8px;
@@ -67,14 +70,16 @@ body {
 
 /* Tema oscuro */
 :root[data-theme="dark"] {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --text: #f8fafc;
-  --muted: #94a3b8;
-  --border: #334155;
-  --accent: var(--color-blue);
+  --bg: #111111;
+  --surface: #1c1c1c;
+  --text: #f5f5f5;
+  --muted: #a3a3a3;
+  --border: #333333;
+  --accent: #4d8dff;
   --accent-contrast: #ffffff;
-  --accent-rgb: 62, 183, 234;
+  --accent-rgb: 77, 141, 255;
+  --accent-secondary: var(--color-gold);
+  --accent-secondary-contrast: #111111;
 }
 
 /* 3) Utilidades base */

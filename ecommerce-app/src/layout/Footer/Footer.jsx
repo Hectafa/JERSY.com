@@ -38,13 +38,13 @@ export default function Footer() {
                 <h3>Categorías</h3>
                 <ul>
                   <li>
-                    <Link to="#">Clubes</Link>
+                    <Link to="/category/69e9b6af22253d2d6f87046e">Clubes</Link>
                   </li>
                   <li>
-                    <Link to="#">Selecciones</Link>
+                    <Link to="/category/6a6660e507cb22fed56e905c">Selecciones</Link>
                   </li>
                   <li>
-                    <Link to="#">Clásicos</Link>
+                    <Link to="/category/6a6660e507cb22fed56e905d">Clásicos</Link>
                   </li>
                 </ul>
               </div>

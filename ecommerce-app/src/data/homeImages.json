@@ -4,7 +4,7 @@
     "subtitle": "Viste los clasicos mundiales",
     "image": "https://mxc.com.mx/wp-content/uploads/2025/06/Nuevo-proyecto-11-.png",
     "buttonText": "Comprar Ahora",
-    "buttonLink": "/collections/summer",
+    "buttonLink": "/category/6a6660e507cb22fed56e905d",
     "backgroundColor": "#26336c",
     "backgroundPosition": "center 15%"
   },
@@ -13,7 +13,7 @@
     "subtitle": "Busca tu club favorito",
     "image": "https://cloudfront-us-east-1.images.arcpublishing.com/infobae/KRHMRQRWPBCE7DGDE3POCQQJ3I.jpg",
     "buttonText": "Comprar ahora",
-    "buttonLink": "/offers",
+    "buttonLink": "/category/69e9b6af22253d2d6f87046e",
     "backgroundColor": "#8677b5"
   },
   {
@@ -21,14 +21,14 @@
     "subtitle": "Apoya a tu país",
     "image": "https://ichef.bbci.co.uk/ace/ws/640/cpsprodpb/B04A/production/_99003154_banderas1.jpg.webp",
     "buttonText": "Comprar ahora",
-    "buttonLink": "/tech",
+    "buttonLink": "/category/6a6660e507cb22fed56e905c",
     "backgroundColor": "#3eb7ea"
   },
   {
     "title": "Envío Gratis",
     "subtitle": "En compras superiores a $799",
     "image": "https://cmsphoto.ww-cdn.com/superstatic/81328/art/grande/40930198-34559071.jpg?v=1576776980.5958636",
-    "buttonText": "Comprar Ahora",
+    "buttonText": "Comprar ahora",
     "buttonLink": "/",
     "backgroundColor": "#79bf87"
   }

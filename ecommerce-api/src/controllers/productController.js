@@ -164,6 +164,13 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
+const uploadProductImageController = (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No se recibio ninguna imagen" });
+  }
+  res.status(201).json({ imageURL: `/uploads/products/${req.file.filename}` });
+};
+
 const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -184,4 +191,5 @@ export {
   createProduct,
   updateProduct,
   deleteProduct,
+  uploadProductImageController,
 };
