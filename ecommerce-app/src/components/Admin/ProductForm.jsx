@@ -4,14 +4,26 @@ import Input from "../common/Input";
 import { uploadProductImage } from "../../services/productsService";
 import { getProductImageUrl } from "../../utils/images";
 
+const SIZES = ["CH", "M", "G", "XL"];
+
+const emptySizes = SIZES.map((size) => ({ size, stock: 0 }));
+
 const emptyProduct = {
   name: "",
   description: "",
   price: "",
-  stock: "",
+  sizes: emptySizes,
   imageURL: "",
   category: "",
 };
+
+function normalizeSizes(sizes) {
+  if (!sizes || sizes.length === 0) return emptySizes;
+  return SIZES.map((size) => {
+    const found = sizes.find((s) => s.size === size);
+    return { size, stock: found ? found.stock : 0 };
+  });
+}
 
 export default function ProductForm({
   onSubmit,
@@ -20,7 +32,11 @@ export default function ProductForm({
   initialValues = {},
   isEdit = false,
 }) {
-  const [formData, setFormData] = useState({ ...emptyProduct, ...initialValues });
+  const [formData, setFormData] = useState({
+    ...emptyProduct,
+    ...initialValues,
+    sizes: normalizeSizes(initialValues.sizes),
+  });
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState(null);
   // Categoría principal y subcategoría (opcional) se manejan como selects
@@ -34,7 +50,11 @@ export default function ProductForm({
     categories.filter((c) => c.parentCategory && c.parentCategory._id === parentId);
 
   useEffect(() => {
-    setFormData({ ...emptyProduct, ...initialValues });
+    setFormData({
+      ...emptyProduct,
+      ...initialValues,
+      sizes: normalizeSizes(initialValues.sizes),
+    });
 
     // Al editar, si la categoría guardada es una subcategoría, preseleccionamos
     // también su categoría principal para que ambos selects queden correctos.
@@ -53,6 +73,13 @@ export default function ProductForm({
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSizeStockChange = (size, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizes: prev.sizes.map((s) => (s.size === size ? { ...s, stock: value } : s)),
+    }));
   };
 
   const handleMainCategoryChange = (e) => {
@@ -87,10 +114,15 @@ export default function ProductForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const sizes = formData.sizes.map((s) => ({
+      size: s.size,
+      stock: parseInt(s.stock, 10) || 0,
+    }));
     onSubmit({
       ...formData,
       price: parseFloat(formData.price),
-      stock: parseInt(formData.stock, 10),
+      stock: sizes.reduce((sum, s) => sum + s.stock, 0),
+      sizes,
     });
   };
 
@@ -114,26 +146,32 @@ export default function ProductForm({
         required
       />
 
-      <div className="form-row">
-        <Input
-          label="Precio"
-          name="price"
-          type="number"
-          min="0"
-          step="0.01"
-          value={formData.price}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="Stock"
-          name="stock"
-          type="number"
-          min="0"
-          value={formData.stock}
-          onChange={handleChange}
-          required
-        />
+      <Input
+        label="Precio"
+        name="price"
+        type="number"
+        min="0"
+        step="0.01"
+        value={formData.price}
+        onChange={handleChange}
+        required
+      />
+
+      <div className="input-group">
+        <label className="input-label">Stock por talla</label>
+        <div className="form-row">
+          {formData.sizes.map((s) => (
+            <Input
+              key={s.size}
+              label={s.size}
+              name={`size-${s.size}`}
+              type="number"
+              min="0"
+              value={s.stock}
+              onChange={(e) => handleSizeStockChange(s.size, e.target.value)}
+            />
+          ))}
+        </div>
       </div>
 
       <Input

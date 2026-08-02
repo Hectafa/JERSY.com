@@ -1,10 +1,27 @@
 import { body, param } from "express-validator";
+import { PRODUCT_SIZES } from "../models/Product.js";
 
 export const productIdValidation = [
   param("id")
     .isMongoId()
     .withMessage("Product ID must be a valid MongoDB ObjectId"),
 ];
+
+const sizesValidation = body("sizes")
+  .optional()
+  .isArray()
+  .withMessage("Sizes must be an array")
+  .custom((sizes) => {
+    for (const item of sizes) {
+      if (!PRODUCT_SIZES.includes(item.size)) {
+        throw new Error(`Size must be one of: ${PRODUCT_SIZES.join(", ")}`);
+      }
+      if (typeof item.stock !== "number" || item.stock < 0) {
+        throw new Error("Each size must have a non-negative stock number");
+      }
+    }
+    return true;
+  });
 
 export const createProductValidation = [
   body("name").notEmpty().withMessage("Name is required"),
@@ -17,6 +34,7 @@ export const createProductValidation = [
     .optional()
     .isMongoId()
     .withMessage("Category must be a valid MongoDB ObjectId"),
+  sizesValidation,
 ];
 
 export const updateProductValidation = [
@@ -36,4 +54,5 @@ export const updateProductValidation = [
     .optional()
     .isMongoId()
     .withMessage("Category must be a valid MongoDB ObjectId"),
+  sizesValidation,
 ];

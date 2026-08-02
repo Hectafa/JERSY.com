@@ -5,6 +5,7 @@ import {
   getOrdersByUser,
   createOrder,
   updateOrderStatus,
+  deleteOrder,
 } from "../controllers/orderController.js";
 import validate from "../middlewares/validation.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
@@ -50,6 +51,15 @@ router.put(
   updateOrderStatusValidation,
   validate,
   updateOrderStatus,
+);
+
+router.delete(
+  "/orders/:id",
+  authMiddleware,
+  isAdmin,
+  orderIdValidation,
+  validate,
+  deleteOrder,
 );
 
 export default router;

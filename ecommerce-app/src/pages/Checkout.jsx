@@ -427,6 +427,7 @@ export default function Checkout() {
 
     const orderItems = cartItems.map((item) => ({
       name: item.product.name,
+      size: item.size ?? null,
       price: item.product.price,
       quantity: item.quantity,
       subtotal: item.product.price * item.quantity,
@@ -446,6 +447,7 @@ export default function Checkout() {
         user: user?.id,
         products: cartItems.map((item) => ({
           productId: item.product._id,
+          size: item.size ?? null,
           quantity: item.quantity,
           price: item.product.price,
         })),
@@ -485,7 +487,9 @@ export default function Checkout() {
       clearCart();
       navigate("/order-confirmation", { state: { order } });
     } catch (err) {
+      const backendMessage = err?.original?.response?.data?.message;
       setOrderError(
+        backendMessage ||
         "No se pudo confirmar tu pedido. Verifica tus datos e intenta de nuevo."
       );
       setOrderSubmitting(false);

@@ -10,7 +10,6 @@ function buildRoleActions(navigate) {
     admin: [
       { label: "Editar Perfil", action: () => navigate("/profile/edit") },
       { label: "Cambiar contraseña", action: () => navigate("/profile/change-password") },
-      { label: "Ver todos los pedidos", action: () => navigate("/orders") },
       { label: "Panel de administración", action: () => navigate("/admin/products") },
     ],
     customer: [

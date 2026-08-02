@@ -1,4 +1,5 @@
 import { body, param } from "express-validator";
+import { PRODUCT_SIZES } from "../models/Product.js";
 
 export const cartIdValidation = [
   param("id")
@@ -25,6 +26,10 @@ export const createCartValidation = [
   body("products.*.product")
     .isMongoId()
     .withMessage("Each product must be a valid MongoDB ObjectId"),
+  body("products.*.size")
+    .optional({ nullable: true })
+    .isIn(PRODUCT_SIZES)
+    .withMessage(`Size must be one of: ${PRODUCT_SIZES.join(", ")}`),
   body("products.*.quantity")
     .isInt({ min: 1 })
     .withMessage("Quantity must be an integer greater than or equal to 1"),
@@ -41,6 +46,10 @@ export const addToCartValidation = [
     .withMessage("Product ID is required")
     .isMongoId()
     .withMessage("Product ID must be a valid MongoDB ObjectId"),
+  body("size")
+    .optional({ nullable: true })
+    .isIn(PRODUCT_SIZES)
+    .withMessage(`Size must be one of: ${PRODUCT_SIZES.join(", ")}`),
   body("quantity")
     .optional()
     .isInt({ min: 1 })
@@ -66,6 +75,10 @@ export const putCartValidation = [
     .withMessage("Each product item must include product ID")
     .isMongoId()
     .withMessage("Each product must be a valid MongoDB ObjectId"),
+  body("products.*.size")
+    .optional({ nullable: true })
+    .isIn(PRODUCT_SIZES)
+    .withMessage(`Size must be one of: ${PRODUCT_SIZES.join(", ")}`),
   body("products.*.quantity")
     .notEmpty()
     .withMessage("Each product item must include quantity")

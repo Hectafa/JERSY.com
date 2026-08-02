@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import Button from "../components/common/Button";
 import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
 import Loading from "../components/common/Loading/Loading";
-import { getAllOrders, updateOrderStatus } from "../services/orderService";
+import { getAllOrders, updateOrderStatus, deleteOrder } from "../services/orderService";
 import "./Orders.css";
 
 const statusOptions = ["pending", "processing", "shipped", "delivered", "cancelled"];
+const DELETABLE_STATUSES = ["delivered", "cancelled"];
 
 const tabs = [
     { key: "all", label: "Todos", status: undefined },
@@ -38,6 +39,7 @@ const formatMoney = (value = 0) =>
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState(null);
         const [updatingId, setUpdatingId] = useState(null);
+        const [deletingId, setDeletingId] = useState(null);
 
         useEffect(() => {
             let cancelled = false;
@@ -76,6 +78,21 @@ const formatMoney = (value = 0) =>
             }
         };
 
+        const handleDelete = async (order) => {
+            const confirmed = window.confirm(`¿Eliminar el pedido #${order._id}? Esta acción no se puede deshacer.`);
+            if (!confirmed) return;
+
+            setDeletingId(order._id);
+            try {
+                await deleteOrder(order._id);
+                setOrders((prev) => prev.filter((o) => o._id !== order._id));
+            } catch (err) {
+                setError("No se pudo eliminar el pedido.");
+            } finally {
+                setDeletingId(null);
+            }
+        };
+
         return (
             <div className="admin-order-container" style={{padding: "24px"}}>
                 <h1 className="h1" style={{ marginBottom: "16px" }}>
@@ -108,11 +125,13 @@ const formatMoney = (value = 0) =>
                                 <th style={{ textAlign: "left" }}>Total</th>
                                 <th style={{ textAlign: "left" }}>Estado</th>
                                 <th></th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {orders.map((order) => {
                                 const statusToken = (order.status || "pending").toLowerCase();
+                                const canDelete = DELETABLE_STATUSES.includes(statusToken);
                                 return (
                                     <tr key={order._id}>
                                         <td>#{order._id}</td>
@@ -140,6 +159,20 @@ const formatMoney = (value = 0) =>
                                                     </option>
                                                 ))}
                                             </select>
+                                        </td>
+                                        <td>
+                                            {canDelete && (
+                                                <Button
+                                                variant="ghost"
+                                                className="danger"
+                                                size="sm"
+                                                disabled={deletingId === order._id}
+                                                onClick={() => handleDelete(order)}
+                                                title="Eliminar pedido"
+                                                >
+                                                    Eliminar
+                                                </Button>
+                                            )}
                                         </td>
                                     </tr>
                                 );

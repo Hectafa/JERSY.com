@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import request from "supertest";
 import app from "../../src/app.js";
 import Order from "../../src/models/Order.js";
+import Product from "../../src/models/Product.js";
 import {
   createUser,
   createAdmin,
@@ -261,6 +262,155 @@ describe("POST /api/orders - prevención de duplicados", () => {
   });
 });
 
+// NUEVO: cubre el fix de reserva de stock — antes createOrder no descontaba
+// stock en absoluto, así que dos pedidos podían vender más unidades de las
+// que existían.
+describe("POST /api/orders - reserva de stock", () => {
+  it("descuenta el stock del producto al crear la orden", async () => {
+    const { user, token } = await createUser();
+    const product = await createProduct({ price: 100, stock: 10 });
+    const address = await createAddress(user._id);
+    const paymentMethod = await createPaymentMethod(user._id);
+    const payload = await buildOrderPayload({ user, address, paymentMethod, product, totalPrice: 200 });
+
+    const res = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(payload);
+
+    expect(res.status).toBe(201);
+    const stored = await Product.findById(product._id);
+    expect(stored.stock).toBe(8);
+  });
+
+  it("descuenta el stock de la talla pedida, no solo el stock total", async () => {
+    const { user, token } = await createUser();
+    const product = await createProduct({
+      price: 100,
+      stock: 5,
+      sizes: [{ size: "CH", stock: 3 }, { size: "M", stock: 2 }],
+    });
+    const address = await createAddress(user._id);
+    const paymentMethod = await createPaymentMethod(user._id);
+
+    const payload = {
+      user: user._id,
+      products: [{ productId: product._id, size: "CH", quantity: 2, price: product.price }],
+      address: address._id,
+      paymentMethod: paymentMethod._id,
+      totalPrice: 200,
+      shippingCost: 0,
+    };
+
+    const res = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(payload);
+
+    expect(res.status).toBe(201);
+    const stored = await Product.findById(product._id);
+    expect(stored.stock).toBe(3);
+    expect(stored.sizes.find((s) => s.size === "CH").stock).toBe(1);
+    expect(stored.sizes.find((s) => s.size === "M").stock).toBe(2);
+  });
+
+  it("rechaza la orden cuando la cantidad pedida excede el stock disponible", async () => {
+    const { user, token } = await createUser();
+    const product = await createProduct({ price: 100, stock: 1 });
+    const address = await createAddress(user._id);
+    const paymentMethod = await createPaymentMethod(user._id);
+
+    const payload = {
+      user: user._id,
+      products: [{ productId: product._id, quantity: 2, price: product.price }],
+      address: address._id,
+      paymentMethod: paymentMethod._id,
+      totalPrice: 200,
+      shippingCost: 0,
+    };
+
+    const res = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(payload);
+
+    expect(res.status).toBe(400);
+    const stored = await Product.findById(product._id);
+    expect(stored.stock).toBe(1);
+    expect(await Order.countDocuments({})).toBe(0);
+  });
+
+  it("rechaza la orden cuando la talla pedida no tiene stock suficiente, aunque el producto sí tenga stock total", async () => {
+    const { user, token } = await createUser();
+    const product = await createProduct({
+      price: 100,
+      stock: 10,
+      sizes: [{ size: "CH", stock: 1 }, { size: "M", stock: 9 }],
+    });
+    const address = await createAddress(user._id);
+    const paymentMethod = await createPaymentMethod(user._id);
+
+    const payload = {
+      user: user._id,
+      products: [{ productId: product._id, size: "CH", quantity: 2, price: product.price }],
+      address: address._id,
+      paymentMethod: paymentMethod._id,
+      totalPrice: 200,
+      shippingCost: 0,
+    };
+
+    const res = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(payload);
+
+    expect(res.status).toBe(400);
+    const stored = await Product.findById(product._id);
+    expect(stored.sizes.find((s) => s.size === "CH").stock).toBe(1);
+  });
+
+  it("no permite que dos pedidos simultáneos vendan más unidades de las que hay en stock", async () => {
+    const { user: userA, token: tokenA } = await createUser();
+    const { user: userB, token: tokenB } = await createUser();
+    const product = await createProduct({
+      price: 100,
+      stock: 3,
+      sizes: [{ size: "CH", stock: 3 }],
+    });
+    const addressA = await createAddress(userA._id);
+    const paymentA = await createPaymentMethod(userA._id);
+    const addressB = await createAddress(userB._id);
+    const paymentB = await createPaymentMethod(userB._id);
+
+    const buildPayload = (user, address, paymentMethod) => ({
+      user: user._id,
+      products: [{ productId: product._id, size: "CH", quantity: 2, price: product.price }],
+      address: address._id,
+      paymentMethod: paymentMethod._id,
+      totalPrice: 200,
+      shippingCost: 0,
+    });
+
+    const [resA, resB] = await Promise.all([
+      request(app)
+        .post("/api/orders")
+        .set("Authorization", authHeader(tokenA))
+        .send(buildPayload(userA, addressA, paymentA)),
+      request(app)
+        .post("/api/orders")
+        .set("Authorization", authHeader(tokenB))
+        .send(buildPayload(userB, addressB, paymentB)),
+    ]);
+
+    const statuses = [resA.status, resB.status].sort();
+    expect(statuses).toEqual([201, 400]);
+
+    const stored = await Product.findById(product._id);
+    expect(stored.sizes.find((s) => s.size === "CH").stock).toBe(1);
+    expect(stored.stock).toBe(1);
+  });
+});
+
 describe("GET /api/orders/:id", () => {
   it("devuelve la orden solicitada", async () => {
     const { user, token } = await createUser();
@@ -460,5 +610,84 @@ describe("PUT /api/orders/:id", () => {
       .send({ status: "not-a-real-status" });
 
     expect(res.status).toBe(422);
+  });
+});
+
+// NUEVO: el admin puede borrar pedidos, pero solo si ya están cerrados
+// (delivered/cancelled) — un pedido en curso no debe poder eliminarse.
+describe("DELETE /api/orders/:id", () => {
+  const createOrderWithStatus = async (status) => {
+    const { user, token } = await createUser();
+    const admin = await createAdmin();
+    const product = await createProduct({ price: 100 });
+    const address = await createAddress(user._id);
+    const paymentMethod = await createPaymentMethod(user._id);
+    const payload = await buildOrderPayload({ user, address, paymentMethod, product, totalPrice: 200 });
+
+    const created = await request(app)
+      .post("/api/orders")
+      .set("Authorization", authHeader(token))
+      .send(payload);
+
+    await request(app)
+      .put(`/api/orders/${created.body._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ status });
+
+    return { orderId: created.body._id, admin, user, token };
+  };
+
+  it("permite a un admin borrar un pedido entregado", async () => {
+    const { orderId, admin } = await createOrderWithStatus("delivered");
+
+    const res = await request(app)
+      .delete(`/api/orders/${orderId}`)
+      .set("Authorization", authHeader(admin.token));
+
+    expect(res.status).toBe(204);
+    expect(await Order.findById(orderId)).toBeNull();
+  });
+
+  it("permite a un admin borrar un pedido cancelado", async () => {
+    const { orderId, admin } = await createOrderWithStatus("cancelled");
+
+    const res = await request(app)
+      .delete(`/api/orders/${orderId}`)
+      .set("Authorization", authHeader(admin.token));
+
+    expect(res.status).toBe(204);
+    expect(await Order.findById(orderId)).toBeNull();
+  });
+
+  it("rechaza borrar un pedido que sigue en curso (ej. shipped)", async () => {
+    const { orderId, admin } = await createOrderWithStatus("shipped");
+
+    const res = await request(app)
+      .delete(`/api/orders/${orderId}`)
+      .set("Authorization", authHeader(admin.token));
+
+    expect(res.status).toBe(400);
+    expect(await Order.findById(orderId)).not.toBeNull();
+  });
+
+  it("rechaza la petición de un usuario que no es admin", async () => {
+    const { orderId, token } = await createOrderWithStatus("delivered");
+
+    const res = await request(app)
+      .delete(`/api/orders/${orderId}`)
+      .set("Authorization", authHeader(token));
+
+    expect(res.status).toBe(403);
+    expect(await Order.findById(orderId)).not.toBeNull();
+  });
+
+  it("devuelve 404 al borrar un pedido inexistente", async () => {
+    const admin = await createAdmin();
+
+    const res = await request(app)
+      .delete("/api/orders/64b64f1f1f1f1f1f1f1f1f1f")
+      .set("Authorization", authHeader(admin.token));
+
+    expect(res.status).toBe(404);
   });
 });

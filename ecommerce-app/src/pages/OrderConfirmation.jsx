@@ -52,9 +52,10 @@ export default function OrderConfirmation() {
             </p>
             <h3>Productos</h3>
             <ul className="order-items">
-              {(order.items || []).map((item) => (
-                <li key={item._id}>
-                  {item.name} x {item.quantity} - {formatMoney(item.price)}
+              {(order.items || []).map((item, index) => (
+                <li key={item._id || index}>
+                  {item.name}
+                  {item.size && ` (Talla: ${item.size})`} x {item.quantity} - {formatMoney(item.price)}
                   <span>{formatMoney(item.subtotal)}</span>
                 </li>
               ))}

@@ -48,6 +48,62 @@ const getOrderById = async (req, res, next) => {
 // antes de confirmar — ahora también se recalcula y persiste server-side.
 const TAX_RATE = 0.16;
 
+// NUEVO (fix): createOrder no descontaba stock en absoluto, así que dos
+// usuarios podían pedir más unidades de las que existían (ej. 2 + 2 CH con
+// solo 3 en stock). findOneAndUpdate con la condición de stock suficiente
+// en el filtro es atómico a nivel de documento en MongoDB: si dos requests
+// llegan casi al mismo tiempo, el segundo ve el stock ya descontado por el
+// primero y falla la condición, sin importar el orden de llegada.
+async function reserveStock(items) {
+  const reserved = [];
+  for (const item of items) {
+    const filter = { _id: item.productId, stock: { $gte: item.quantity } };
+    const update = { $inc: { stock: -item.quantity } };
+    if (item.size) {
+      // $elemMatch es necesario: dos condiciones sueltas ("sizes.size" y
+      // "sizes.stock" por separado) pueden cumplirse con DOS elementos
+      // distintos del array (ej. talla CH con poco stock + talla M con
+      // suficiente), dejando pasar un pedido que en realidad no cabe en la
+      // talla pedida. $elemMatch obliga a que ambas condiciones se cumplan
+      // en el mismo elemento del array.
+      filter.sizes = { $elemMatch: { size: item.size, stock: { $gte: item.quantity } } };
+      update.$inc["sizes.$.stock"] = -item.quantity;
+    }
+
+    const updated = await Product.findOneAndUpdate(filter, update);
+    if (!updated) {
+      await releaseStock(reserved);
+      const sizeLabel = item.size ? ` (talla ${item.size})` : "";
+      return {
+        ok: false,
+        message: `Stock insuficiente para el producto ${item.productId}${sizeLabel}`,
+      };
+    }
+    reserved.push(item);
+  }
+  return { ok: true };
+}
+
+// Revierte una reserva parcial: se usa si un ítem falla a medio camino (para
+// no dejar descontados los ítems anteriores de la misma orden fallida) o si
+// Order.create() falla después de haber reservado el stock.
+async function releaseStock(items) {
+  for (const item of items) {
+    if (item.size) {
+      await Product.updateOne(
+        { _id: item.productId },
+        { $inc: { stock: item.quantity, "sizes.$[s].stock": item.quantity } },
+        { arrayFilters: [{ "s.size": item.size }] },
+      );
+    } else {
+      await Product.updateOne(
+        { _id: item.productId },
+        { $inc: { stock: item.quantity } },
+      );
+    }
+  }
+}
+
 const createOrder = async (req, res, next) => {
   try {
     const { user, products, address, paymentMethod, shippingCost = 0 } =
@@ -76,6 +132,7 @@ const createOrder = async (req, res, next) => {
       computedSubtotal += dbProduct.price * item.quantity;
       normalizedProducts.push({
         productId: item.productId,
+        size: item.size ?? null,
         quantity: item.quantity,
         price: dbProduct.price,
       });
@@ -103,7 +160,8 @@ const createOrder = async (req, res, next) => {
       a.every(
         (item, i) =>
           item.productId.toString() === b[i].productId.toString() &&
-          item.quantity === b[i].quantity,
+          item.quantity === b[i].quantity &&
+          (item.size || null) === (b[i].size || null),
       );
 
     const duplicate = recentCandidates.find((candidate) =>
@@ -117,15 +175,29 @@ const createOrder = async (req, res, next) => {
       });
     }
 
-    const newOrder = await Order.create({
-      user,
-      products: normalizedProducts,
-      address,
-      paymentMethod,
-      totalPrice: computedTotal,
-      shippingCost,
-      tax: computedTax,
-    });
+    // NUEVO (fix): reserva (descuenta) el stock real antes de crear la
+    // orden. Si no hay suficiente stock para algún ítem, no se crea la
+    // orden y se libera lo ya reservado de los ítems anteriores.
+    const stockReservation = await reserveStock(normalizedProducts);
+    if (!stockReservation.ok) {
+      return res.status(400).json({ message: stockReservation.message });
+    }
+
+    let newOrder;
+    try {
+      newOrder = await Order.create({
+        user,
+        products: normalizedProducts,
+        address,
+        paymentMethod,
+        totalPrice: computedTotal,
+        shippingCost,
+        tax: computedTax,
+      });
+    } catch (error) {
+      await releaseStock(normalizedProducts);
+      throw error;
+    }
 
     await newOrder.populate("user");
     await newOrder.populate("products.productId");
@@ -179,4 +251,35 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-export { getOrders, getOrderById, getOrdersByUser, createOrder, updateOrderStatus };
+// NUEVO: el admin puede borrar únicamente pedidos ya cerrados (entregados o
+// cancelados) — un pedido pending/processing/shipped todavía representa
+// stock reservado y trabajo en curso, no debe poder desaparecer del sistema.
+const deleteOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (!["delivered", "cancelled"].includes(order.status)) {
+      return res.status(400).json({
+        message: "Only delivered or cancelled orders can be deleted",
+      });
+    }
+
+    await Order.findByIdAndDelete(id);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  getOrders,
+  getOrderById,
+  getOrdersByUser,
+  createOrder,
+  updateOrderStatus,
+  deleteOrder,
+};

@@ -31,3 +31,8 @@ export async function getAllOrders(status) {
   });
   return response.data;
 }
+
+//DELETE /orders/:id → elimina un pedido (solo si esta cancelled o delivered)
+export async function deleteOrder(id) {
+  await apiClient.delete(`/orders/${id}`);
+}

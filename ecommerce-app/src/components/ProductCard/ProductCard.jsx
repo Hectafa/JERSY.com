@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { getProductImageUrl } from "../../utils/images";
@@ -6,8 +7,9 @@ import Button from "../common/Button";
 import "./ProductCard.css";
 
 export default function ProductCard({ product, orientation = "vertical" }) {
-  const { addItem: addToCart } = useCart();
-  const { name, price, stock, imageURL, description } = product || {};
+  const { addItem: addToCart, items } = useCart();
+  const [selectedSize, setSelectedSize] = useState(null);
+  const { name, price, stock, imageURL, description, sizes } = product || {};
 
   if (!product) {
     return (
@@ -20,12 +22,34 @@ export default function ProductCard({ product, orientation = "vertical" }) {
     );
   }
 
+  const hasSizes = Boolean(sizes?.length);
+  const selectedSizeStock = hasSizes
+    ? sizes.find((s) => s.size === selectedSize)?.stock ?? 0
+    : 0;
+    const cartQuantity = items.find((item) => item.product._id === product._id &&
+      item.size === (hasSizes ? selectedSize : null),
+    )?.quantity ?? 0;
+  const remainingStock = (hasSizes ? selectedSizeStock : stock) - cartQuantity;
+  const addDisabled = hasSizes
+    ? !selectedSize || remainingStock <= 0
+    : stock === 0;
+
   const stockBadge =
     stock > 0
-      ? { text: "En stock", variant: "success" }
+      ? { text: "Disponible", variant: "success" }
       : { text: "Agotado", variant: "error" };
   const hasDiscount = product.discount && product.discount > 0;
-  const handleAddToCart = () => addToCart(product, 1);
+
+  const handleAddToCart = () => {
+    if (remainingStock <= 0) return;
+    if (hasSizes) {
+      if (!selectedSize) return;
+      addToCart(product, 1, selectedSize);
+      return;
+    }
+    addToCart(product, 1);
+  };
+
   const productLink = `/product/${product._id}`;
   const cardClass = `product-card product-card--${orientation}`;
 
@@ -65,6 +89,25 @@ export default function ProductCard({ product, orientation = "vertical" }) {
           </p>
         )}
         <div className="product-card-price">${price}</div>
+        {hasSizes && (
+          <div
+            className="product-card-sizes"
+            data-testid={`size-selector-${product._id}`}
+          >
+            {sizes.map((s) => (
+              <button
+                key={s.size}
+                type="button"
+                className={`size-option-sm${selectedSize === s.size ? " selected" : ""}`}
+                disabled={s.stock === 0}
+                onClick={() => setSelectedSize(s.size)}
+                data-testid={`size-option-${product._id}-${s.size}`}
+              >
+                {s.size}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="product-card-actions">
         <div style={{ display: "flex", gap: "8px" }}>
@@ -76,7 +119,7 @@ export default function ProductCard({ product, orientation = "vertical" }) {
         <Button
           variant="primary"
           size="sm"
-          disabled={stock === 0}
+          disabled={addDisabled}
           onClick={handleAddToCart}
           data-testid={`add-to-cart-button-${product._id}`}
         >

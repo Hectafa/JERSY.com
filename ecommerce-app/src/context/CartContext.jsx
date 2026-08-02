@@ -10,6 +10,10 @@ import { readLocalJSON, writeLocalJSON } from "../utils/storageHelpers";
 
 const CartContext = createContext();
 
+export function getItemKey(item) {
+  return item.size ? `${item.product._id}-${item.size}` : item.product._id;
+}
+
 export function CartProvider({ children }) {
   const CART_STORAGE_KEY = "cart";
 
@@ -76,6 +80,7 @@ export function CartProvider({ children }) {
       const products = nextItems.map((item) => ({
         product: item.product._id,
         quantity: item.quantity,
+        size: item.size ?? null,
       }));
 
       if (!cartId) {
@@ -100,26 +105,26 @@ export function CartProvider({ children }) {
   );
 
   const removeItem = useCallback(
-    async (itemId) => {
-      const actualItems = items.filter((item) => item.product._id !== itemId);
+    async (itemKey) => {
+      const actualItems = items.filter((item) => getItemKey(item) !== itemKey);
       changeItems(actualItems);
     },
     [items, changeItems],
   );
 
   const addItem = useCallback(
-    async (product, quantity = 1) => {
+    async (product, quantity = 1, size = null) => {
       const existingProduct = items.find(
-        (item) => item.product._id === product._id,
+        (item) => item.product._id === product._id && item.size === size,
       );
 
       const nextItems = existingProduct
         ? items.map((item) =>
-            item.product._id === product._id
+            item.product._id === product._id && item.size === size
               ? { ...item, quantity: item.quantity + quantity }
               : item,
           )
-        : [...items, { product, quantity }];
+        : [...items, { product, quantity, size }];
 
       changeItems(nextItems);
     },
@@ -127,14 +132,14 @@ export function CartProvider({ children }) {
   );
 
   const updateQuantity = useCallback(
-    async (itemId, quantity) => {
+    async (itemKey, quantity) => {
       if (quantity < 1) {
-        removeItem(itemId);
+        removeItem(itemKey);
         return;
       }
 
       const nextItems = items.map((item) =>
-        item.product._id === itemId ? { ...item, quantity } : item,
+        getItemKey(item) === itemKey ? { ...item, quantity } : item,
       );
 
       changeItems(nextItems);

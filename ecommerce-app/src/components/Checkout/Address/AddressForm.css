@@ -2,14 +2,14 @@
   max-width: 500px;
   margin: 0 auto;
   padding: 20px;
-  background: #fff;
+  background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .address-form h3 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text);
   text-align: center;
 }
 
@@ -26,7 +26,7 @@
 }
 
 .form-checkbox label {
-  color: #666;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 

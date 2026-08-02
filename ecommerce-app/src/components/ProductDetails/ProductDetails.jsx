@@ -13,12 +13,13 @@ import Icon from "../common/Icon/Icon";
 import "./ProductDetails.css";
 
 export default function ProductDetails({ productId }) {
-  const { addItem: addToCart } = useCart();
+  const { addItem: addToCart, items } = useCart();
   const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wishlistStatus, setWishlistStatus] = useState("idle");
+  const [selectedSize, setSelectedSize] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,6 +27,7 @@ export default function ProductDetails({ productId }) {
       try {
         setLoading(true);
         setError(null);
+        setSelectedSize(null);
         const data = await getProductById(productId);
         if (!cancelled) return setProduct(data);
       } catch (error) {
@@ -42,8 +44,28 @@ export default function ProductDetails({ productId }) {
     };
   }, [productId]);
 
+  const hasSizes = Boolean(product?.sizes?.length);
+  const selectedSizeStock = hasSizes
+    ? product.sizes.find((s) => s.size === selectedSize)?.stock ?? 0
+    : 0;
+    const cartQuantity = product
+    ? items.find(
+      (item) =>
+        item.product._id === product._id &&
+      item.size === (hasSizes ?selectedSize : null),
+    )?.quantity ?? 0
+    : 0;
+    const remainingStock = (hasSizes ? selectedSizeStock : product?.stock ?? 0) - cartQuantity;
+
+
   const handleAddToCart = () => {
-    if (product) addToCart(product, 1);
+    if (!product || remainingStock <= 0) return;
+    if (hasSizes) {
+      if (!selectedSize) return;
+      addToCart(product, 1, selectedSize);
+      return;
+    }
+    addToCart(product, 1);
   };
 
   const handleAddToWishlist = async () => {
@@ -112,9 +134,10 @@ export default function ProductDetails({ productId }) {
 
   if (!product) return null;
 
-  const { name, description, price, stock, imageURL, category } = product;
+  const { name, description, price, stock, imageURL, category, sizes } = product;
   const stockBadge = stock > 0 ? "success" : "error";
-  const stockLabel = stock > 0 ? "En stock" : "Agotado";
+  const stockLabel = stock > 0 ? "Disponible" : "Agotado";
+  const addDisabled = hasSizes ? !selectedSize || remainingStock <= 0 : stock === 0;
 
   return (
     <div className="product-details-container" data-testid="product-detail">
@@ -156,11 +179,39 @@ export default function ProductDetails({ productId }) {
             )}
           </div>
           <div className="product-details-price">${price}</div>
+          {hasSizes && (
+            <div className="product-details-sizes" data-testid="size-selector">
+              <span className="product-details-sizes-label">Talla</span>
+              <div className="product-details-sizes-options">
+                {sizes.map((s) => (
+                  <button
+                    key={s.size}
+                    type="button"
+                    className={`size-option${selectedSize === s.size ? " selected" : ""}`}
+                    disabled={s.stock === 0}
+                    onClick={() => setSelectedSize(s.size)}
+                    data-testid={`size-option-${s.size}`}
+                  >
+                    {s.size}
+                  </button>
+                ))}
+              </div>
+              {selectedSize && (
+                <span className="product-details-size-stock muted">
+                  {selectedSizeStock === 0
+                    ? `Talla ${selectedSize} agotada`
+                    : remainingStock > 0
+                    ? `${remainingStock} unidades disponibles en talla ${selectedSize}`
+                    : `Stock agotado en talla ${selectedSize}`}
+                </span>
+              )}
+            </div>
+          )}
           <div className="product-details-actions">
             <Button
               variant="primary"
               size="lg"
-              disabled={stock === 0}
+              disabled={addDisabled}
               onClick={handleAddToCart}
               data-testid="add-to-cart-button"
             >

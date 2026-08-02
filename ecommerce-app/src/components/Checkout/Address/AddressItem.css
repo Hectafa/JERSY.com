@@ -25,12 +25,12 @@
 
 .address-content h4 {
   margin: 0 0 8px 0;
-  color: #333;
+  color: var(--text);
 }
 
 .address-content p {
   margin: 4px 0;
-  color: #666;
+  color: var(--muted);
 }
 
 .default-badge {

@@ -4,7 +4,8 @@ import Product from "../models/Product.js";
 // NUEVO (fix): ni createCart ni updateCart validaban product.stock contra la
 // cantidad solicitada — se podía agregar/actualizar una cantidad mayor al
 // inventario real. Este helper busca los productos reales y devuelve el
-// primer error de stock insuficiente, si lo hay.
+// primer error de stock insuficiente, si lo hay. Si el item trae talla, valida
+// contra el stock de esa talla en vez del stock total del producto.
 async function validateStock(products) {
   const ids = products.map((p) => p.product);
   const dbProducts = await Product.find({ _id: { $in: ids } });
@@ -15,11 +16,17 @@ async function validateStock(products) {
     if (!dbProduct) {
       return { ok: false, status: 404, error: `Product ${item.product} not found` };
     }
-    if (item.quantity > dbProduct.stock) {
+
+    const availableStock = item.size
+      ? dbProduct.sizes.find((s) => s.size === item.size)?.stock ?? 0
+      : dbProduct.stock;
+
+    if (item.quantity > availableStock) {
+      const sizeLabel = item.size ? ` (talla ${item.size})` : "";
       return {
         ok: false,
         status: 400,
-        error: `Insufficient stock for product ${dbProduct.name}: requested ${item.quantity}, available ${dbProduct.stock}`,
+        error: `Insufficient stock for product ${dbProduct.name}${sizeLabel}: requested ${item.quantity}, available ${availableStock}`,
       };
     }
   }
@@ -174,10 +181,12 @@ async function deleteCart(req, res, next) {
 
 async function addProductToCart(req, res, next) {
   try {
-    const { userId, productId, quantity = 1 } = req.body;
+    const { userId, productId, quantity = 1, size = null } = req.body;
     let cart = await Cart.findOne({ user: userId });
     const existingProductIndex = cart
-      ? cart.products.findIndex((item) => item.product.toString() === productId)
+      ? cart.products.findIndex(
+          (item) => item.product.toString() === productId && (item.size ?? null) === size,
+        )
       : -1;
     const finalQuantity =
       existingProductIndex >= 0
@@ -187,7 +196,7 @@ async function addProductToCart(req, res, next) {
     // NUEVO (fix): mismo chequeo de stock que en createCart/updateCart, pero
     // contra la cantidad final (existente + agregada), no solo la agregada.
     const stockCheck = await validateStock([
-      { product: productId, quantity: finalQuantity },
+      { product: productId, quantity: finalQuantity, size },
     ]);
     if (!stockCheck.ok) {
       return res.status(stockCheck.status).json({ error: stockCheck.error });
@@ -196,12 +205,12 @@ async function addProductToCart(req, res, next) {
     if (!cart) {
       cart = new Cart({
         user: userId,
-        products: [{ product: productId, quantity }],
+        products: [{ product: productId, quantity, size }],
       });
     } else if (existingProductIndex >= 0) {
       cart.products[existingProductIndex].quantity = finalQuantity;
     } else {
-      cart.products.push({ product: productId, quantity });
+      cart.products.push({ product: productId, quantity, size });
     }
 
     await cart.save();

@@ -1,4 +1,4 @@
-import { useCart } from "../../context/CartContext";
+import { useCart, getItemKey } from "../../context/CartContext";
 import { getProductImageUrl } from "../../utils/images";
 import Button from "../common/Button";
 import Icon from "../common/Icon/Icon";
@@ -16,15 +16,19 @@ export default function CartView() {
       </div>
 
       {items.map((item) => {
-        const stock = item.product.stock;
+        const itemKey = getItemKey(item);
+        const sizeStock = item.size
+          ? item.product.sizes?.find((s) => s.size === item.size)?.stock
+          : undefined;
+        const stock = sizeStock ?? item.product.stock;
         const hasStockLimit = typeof stock === "number";
         const atStockLimit = hasStockLimit && item.quantity >= stock;
 
         return (
         <div
           className="cart-item"
-          key={item.product._id}
-          data-testid={`cart-item-${item.product._id}`}
+          key={itemKey}
+          data-testid={`cart-item-${itemKey}`}
         >
           <div className="cart-item-image">
             <img
@@ -36,6 +40,7 @@ export default function CartView() {
 
           <div className="cart-item-info">
             <h3>{item.product.name}</h3>
+            {item.size && <p className="muted">Talla: {item.size}</p>}
             <p className="cart-item-price">{`$${item.product.price.toFixed(2)}`}</p>
           </div>
 
@@ -45,13 +50,13 @@ export default function CartView() {
               variant="secondary"
               size="sm"
               onClick={() =>
-                updateQuantity(item.product._id, item.quantity - 1)
+                updateQuantity(itemKey, item.quantity - 1)
               }
-              data-testid={`cart-item-decrease-${item.product._id}`}
+              data-testid={`cart-item-decrease-${itemKey}`}
             >
               <Icon name="minus" size={15}></Icon>
             </Button>
-            <span data-testid={`cart-item-quantity-${item.product._id}`}>
+            <span data-testid={`cart-item-quantity-${itemKey}`}>
               {item.quantity}
             </span>
             <Button
@@ -59,14 +64,14 @@ export default function CartView() {
               size="sm"
               disabled={atStockLimit}
               onClick={() =>
-                updateQuantity(item.product._id, item.quantity + 1)
+                updateQuantity(itemKey, item.quantity + 1)
               }
               title={
                 atStockLimit
                 ? `Solo hay ${stock} unidades disponibles`
                 : undefined
               }
-              data-testid={`cart-item-increase-${item.product._id}`}
+              data-testid={`cart-item-increase-${itemKey}`}
             >
               <Icon name="plus" size={15}></Icon>
             </Button>
@@ -74,7 +79,7 @@ export default function CartView() {
             {atStockLimit && (
               <span
               className="cart-item-stock-warning"
-              data-testid={`cart-item-stock-warning-${item.product._id}`}>
+              data-testid={`cart-item-stock-warning-${itemKey}`}>
                 Alcanzaste el máximo disponible en stock ({stock})
               </span>
             )}
@@ -88,9 +93,9 @@ export default function CartView() {
             variant="ghost"
             className="danger"
             size="sm"
-            onClick={() => removeItem(item.product._id)}
+            onClick={() => removeItem(itemKey)}
             title="Eliminar artículo"
-            data-testid={`cart-item-remove-${item.product._id}`}
+            data-testid={`cart-item-remove-${itemKey}`}
           >
             <Icon name="trash" size={16} />
           </Button>

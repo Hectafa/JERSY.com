@@ -234,6 +234,7 @@ export default function Orders() {
                       <div>
                         <p>{item.productId?.name || "Producto"}</p>
                         <span>
+                          {item.size && <>Talla: {item.size} · </>}
                           Cantidad: {item.quantity || 1} · Precio:{" "}
                           {formatMoney(item.price || 0)}
                         </span>

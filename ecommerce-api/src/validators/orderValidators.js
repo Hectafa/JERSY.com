@@ -1,4 +1,5 @@
 import { body, param } from "express-validator";
+import { PRODUCT_SIZES } from "../models/Product.js";
 
 export const orderIdValidation = [
   param("id")
@@ -28,6 +29,10 @@ export const createOrderValidation = [
     .withMessage("Each product item must include productId")
     .isMongoId()
     .withMessage("Each productId must be a valid MongoDB ObjectId"),
+  body("products.*.size")
+    .optional({ nullable: true })
+    .isIn(PRODUCT_SIZES)
+    .withMessage(`Size must be one of: ${PRODUCT_SIZES.join(", ")}`),
   body("products.*.quantity")
     .notEmpty()
     .withMessage("Each product item must include quantity")

@@ -1,5 +1,13 @@
 import Product from "../models/Product.js";
 
+// El stock del producto siempre se deriva de las tallas: si no hay stock
+// cargado por talla, el producto no tiene stock (no se puede vender sin
+// saber en qué talla hay unidades disponibles).
+function computeStock(sizes) {
+  if (!sizes || sizes.length === 0) return 0;
+  return sizes.reduce((sum, s) => sum + Number(s.stock || 0), 0);
+}
+
 // api/products/search?q=iPhone&category=Apple&minPrice=5000&maxPrice=20000&inStock=true&sort=name&order=asc&page=2&limit=5
 const searchProducts = async (req, res, next) => {
   try {
@@ -130,12 +138,13 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    const { name, description, price, stock, imageURL, category } = req.body;
+    const { name, description, price, imageURL, category, sizes } = req.body;
     const newProduct = await Product.create({
       name,
       description,
       price,
-      stock,
+      stock: computeStock(sizes),
+      sizes,
       imageURL,
       category,
     });
@@ -149,12 +158,16 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, price, stock, imageURL, category } = req.body;
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
-      { name, description, price, stock, imageURL, category },
-      { new: true },
-    ).populate("category");
+    const { name, description, price, imageURL, category, sizes } = req.body;
+    const update = { name, description, price, sizes, imageURL, category };
+    // Solo recalculamos el stock cuando la actualización trae tallas: así una
+    // edición parcial (ej. solo el precio) no borra el stock existente.
+    if (sizes !== undefined) {
+      update.stock = computeStock(sizes);
+    }
+    const updatedProduct = await Product.findByIdAndUpdate(id, update, {
+      new: true,
+    }).populate("category");
     if (!updatedProduct) {
       return res.status(404).json({ message: "Product not found" });
     }

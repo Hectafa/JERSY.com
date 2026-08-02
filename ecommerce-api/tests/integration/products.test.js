@@ -90,6 +90,29 @@ describe("POST /api/products (autorización)", () => {
     const stored = await Product.findById(res.body._id);
     expect(stored).not.toBeNull();
     expect(stored.price).toBe(250);
+    // El stock enviado sin tallas se ignora: sin stock por talla no hay stock.
+    expect(stored.stock).toBe(0);
+  });
+
+  it("calcula el stock como la suma del stock por talla", async () => {
+    const { token } = await createAdmin();
+
+    const res = await request(app)
+      .post("/api/products")
+      .set("Authorization", authHeader(token))
+      .send({
+        name: "Playera con tallas",
+        price: 300,
+        sizes: [
+          { size: "CH", stock: 2 },
+          { size: "M", stock: 3 },
+          { size: "G", stock: 0 },
+          { size: "XL", stock: 1 },
+        ],
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.stock).toBe(6);
   });
 });
 
@@ -123,7 +146,11 @@ describe("PUT /api/products/:id", () => {
     const res = await request(app)
       .put(`/api/products/${product._id}`)
       .set("Authorization", authHeader(token))
-      .send({ name: "Actualizado", price: 150, stock: 8 });
+      .send({
+        name: "Actualizado",
+        price: 150,
+        sizes: [{ size: "M", stock: 8 }],
+      });
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ name: "Actualizado", price: 150, stock: 8 });
@@ -131,6 +158,20 @@ describe("PUT /api/products/:id", () => {
     const stored = await Product.findById(product._id);
     expect(stored.name).toBe("Actualizado");
     expect(stored.price).toBe(150);
+    expect(stored.stock).toBe(8);
+  });
+
+  it("no toca el stock cuando la actualización no incluye tallas", async () => {
+    const { token } = await createAdmin();
+    const product = await createProduct({ name: "Original", price: 100, stock: 5 });
+
+    const res = await request(app)
+      .put(`/api/products/${product._id}`)
+      .set("Authorization", authHeader(token))
+      .send({ price: 150 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.stock).toBe(5);
   });
 
   it("devuelve 404 al actualizar un producto inexistente", async () => {
