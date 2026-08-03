@@ -121,7 +121,7 @@ describe("Checkout", () => {
       amount: 0,
     });
     updateOrderStatus.mockResolvedValue({
-      status: "processing",
+      status: "pending",
       paymentStatus: "paid",
     });
   });
@@ -175,7 +175,6 @@ describe("Checkout", () => {
 
     expect(chargePaymentMethod).toHaveBeenCalledWith("pay-1", 582);
     expect(updateOrderStatus).toHaveBeenCalledWith("order-123", {
-      status: "processing",
       paymentStatus: "paid",
     });
     expect(createOrder).toHaveBeenCalledWith({

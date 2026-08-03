@@ -66,7 +66,7 @@ describe("updateOrderStatusValidation", () => {
   it("acepta un estado válido dentro del enum", async () => {
     const result = await runValidation(
       updateOrderStatusValidation,
-      fakeReq({ params: { id: validId }, body: { status: "shipped" } }),
+      fakeReq({ params: { id: validId }, body: { status: "delivered" } }),
     );
     expect(result.isEmpty()).toBe(true);
   });

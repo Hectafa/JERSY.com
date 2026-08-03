@@ -70,7 +70,7 @@ export const updateOrderStatusValidation = [
     .withMessage("Order ID must be a valid MongoDB ObjectId"),
   body("status")
     .optional()
-    .isIn(["pending", "processing", "shipped", "delivered", "cancelled"])
+    .isIn(["pending", "delivered"])
     .withMessage("Invalid order status"),
   body("paymentStatus")
     .optional()

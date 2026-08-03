@@ -38,3 +38,10 @@
   cursor: not-allowed;
   background: var(--bg);
 }
+
+.inline-category-form {
+  border: 1px dashed var(--border);
+  border-radius: var(--r1);
+  padding: var(--gap);
+  background: var(--surface);
+}

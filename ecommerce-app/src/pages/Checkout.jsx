@@ -462,7 +462,6 @@ export default function Checkout() {
       let orderStatus = backendOrder.status || "pending";
       try {
         const updated = await updateOrderStatus(backendOrder._id, {
-          status: "processing",
           paymentStatus: "paid",
         });
         orderStatus = updated.status || orderStatus;

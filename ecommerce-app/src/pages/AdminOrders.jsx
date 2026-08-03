@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Button from "../components/common/Button";
 import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
 import Loading from "../components/common/Loading/Loading";
 import { getAllOrders, updateOrderStatus, deleteOrder } from "../services/orderService";
 import "./Orders.css";
 
-const statusOptions = ["pending", "processing", "shipped", "delivered", "cancelled"];
-const DELETABLE_STATUSES = ["delivered", "cancelled"];
+const statusOptions = ["pending", "delivered"];
+const DELETABLE_STATUSES = ["delivered"];
 
 const tabs = [
     { key: "all", label: "Todos", status: undefined },
@@ -40,6 +40,7 @@ const formatMoney = (value = 0) =>
         const [error, setError] = useState(null);
         const [updatingId, setUpdatingId] = useState(null);
         const [deletingId, setDeletingId] = useState(null);
+        const [expandedId, setExpandedId] = useState(null);
 
         useEffect(() => {
             let cancelled = false;
@@ -76,6 +77,10 @@ const formatMoney = (value = 0) =>
             } finally {
                 setUpdatingId(null);
             }
+        };
+
+        const toggleExpand = (orderId) => {
+            setExpandedId((prev) => (prev === orderId ? null : orderId));
         };
 
         const handleDelete = async (order) => {
@@ -132,22 +137,32 @@ const formatMoney = (value = 0) =>
                             {orders.map((order) => {
                                 const statusToken = (order.status || "pending").toLowerCase();
                                 const canDelete = DELETABLE_STATUSES.includes(statusToken);
+                                const isExpanded = expandedId === order._id;
                                 return (
-                                    <tr key={order._id}>
-                                        <td>#{order._id}</td>
-                                        <td>
-                                            {order.user?.name || "Sin nombre"}
-                                            <br />
-                                            <span className="muted">{order.user?.email}</span>
-                                        </td>
-                                        <td>{formatDate(order.createdAt)}</td>
-                                        <td style={{ textAlign: "right" }}>{formatMoney(order.totalPrice || 0)}</td>
-                                        <td>
-                                            <span className={`order-status order-status-${statusToken}`}>
-                                                {order.status || "pending"}
-                                            </span>
-                                        </td>
-                                        <td>
+                                    < Fragment key={order._id}>
+                                        <tr>
+                                            <td>
+                                                <button
+                                                type="button"
+                                                className="order-expand-toggle"
+                                                onClick={() => toggleExpand(order._id)}
+                                                >
+                                                    {isExpanded ? "▼" : "▶"} #{order._id}
+                                                </button>
+                                            </td>
+                                            <td>
+                                                {order.user?.name || "Sin nombre"}
+                                                <br />
+                                                <span className="muted">{order.user?.email}</span>
+                                            </td>
+                                            <td>{formatDate(order.createdAt)}</td>
+                                            <td style={{ textAlign: "right" }}>{formatMoney(order.totalPrice || 0)}</td>
+                                            <td>
+                                                <span className={`order-status order-status-${statusToken}`}>
+                                                    {order.status || "pending"}
+                                                </span>
+                                            </td>
+                                            <td>
                                             <select
                                             value={order.status || "pending"}
                                             disabled={updatingId === order._id}
@@ -174,7 +189,41 @@ const formatMoney = (value = 0) =>
                                                 </Button>
                                             )}
                                         </td>
-                                    </tr>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr className="order-details-row">
+                                                <td colSpan={7}>
+                                                    <div className="order-detail-panel">
+                                                        <div>
+                                                            <h4>Productos</h4>
+                                                            <ul className="order-detail-items">
+                                                                {order.products?.map((item, idx) => (
+                                                                    <li key={idx}>
+                                                                        {item.productId?.name || "Producto eliminado"}
+                                                                        {item.size ? ` . Talla ${item.size}` : ""}
+                                                                        {` . Cantidad: ${item.quantity}`}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                        <div>
+                                                            <h4>Dirección de envío</h4>
+                                                            {order.address ? (
+                                                                <p className="order-detail-address">
+                                                                    {order.address.address}, {order.address.city}, {order.address.state}, {order.address.postalCode}, {order.address.country}
+                                                                    <br />
+                                                                    Tel: {order.address.phone}
+                                                                </p>
+                                                            ) : (
+                                                                <p className="order-detail-address">Sin dirección registrada</p>
+                                                            )}
+                                                        </div>
+                                                        <span className="order-detail-id">Pedido: #{order._id}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
                                 );
                             })}
                         </tbody>

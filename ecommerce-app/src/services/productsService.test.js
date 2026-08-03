@@ -22,7 +22,7 @@ describe("productsService", () => {
 
     const result = await getAllProducts();
 
-    expect(apiClient.get).toHaveBeenCalledWith("/products");
+    expect(apiClient.get).toHaveBeenCalledWith("/products", { params: { limit: 100 } });
     expect(result).toEqual({ products: [], pagination: {} });
   });
 

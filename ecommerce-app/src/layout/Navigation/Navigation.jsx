@@ -36,6 +36,31 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
     };
   }, []);
 
+  // El menú desktop se monta una sola vez y vive durante toda la sesión, así
+  // que si se crea una categoría/subcategoría nueva (ej. desde el formulario
+  // de producto en Admin) sin recargar la página, este listado quedaría
+  // desactualizado. Se refresca cada vez que se abre el dropdown.
+  const refreshCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAllCategories();
+      setCategories(data);
+    } catch (err) {
+      setError(err.kind || "UNKNOWN");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleDropdown = () => {
+    setIsDropdownOpen((prev) => {
+      const next = !prev;
+      if (next) refreshCategories();
+      return next;
+    });
+  };
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -94,7 +119,7 @@ const Navigation = ({ isMobile = false, onLinkClick }) => {
           <div className="categories-dropdown" ref={dropdownRef}>
             <button
               className="categories-menu-btn"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={handleToggleDropdown}
             >
               <Icon name="menu" size={16} />
               <span>Todas las categorías</span>

@@ -25,10 +25,13 @@ function normalizeSizes(sizes) {
   });
 }
 
+const NEW_CATEGORY_OPTION = "__new__";
+
 export default function ProductForm({
   onSubmit,
   onCancel,
   categories = [],
+  onCreateCategory,
   initialValues = {},
   isEdit = false,
 }) {
@@ -44,6 +47,12 @@ export default function ProductForm({
   // guarda la subcategoría si se eligió, o la principal si no.
   const [mainCategory, setMainCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
+  // Formularios inline para crear categoría/subcategoría sin salir de aquí.
+  // null = oculto; objeto {name, description} = visible y en edición.
+  const [newMainCategory, setNewMainCategory] = useState(null);
+  const [newSubCategory, setNewSubCategory] = useState(null);
+  const [categoryCreating, setCategoryCreating] = useState(false);
+  const [categoryError, setCategoryError] = useState(null);
 
   const mainCategories = categories.filter((c) => !c.parentCategory);
   const getSubcategories = (parentId) =>
@@ -84,6 +93,11 @@ export default function ProductForm({
 
   const handleMainCategoryChange = (e) => {
     const value = e.target.value;
+    if (value === NEW_CATEGORY_OPTION) {
+      setCategoryError(null);
+      setNewMainCategory({ name: "", description: "" });
+      return;
+    }
     setMainCategory(value);
     setSubCategory("");
     setFormData((prev) => ({ ...prev, category: value }));
@@ -91,8 +105,53 @@ export default function ProductForm({
 
   const handleSubCategoryChange = (e) => {
     const value = e.target.value;
+    if (value === NEW_CATEGORY_OPTION) {
+      setCategoryError(null);
+      setNewSubCategory({ name: "", description: "" });
+      return;
+    }
     setSubCategory(value);
     setFormData((prev) => ({ ...prev, category: value || mainCategory }));
+  };
+
+  const handleCreateMainCategory = async () => {
+    if (!newMainCategory.name.trim() || !newMainCategory.description.trim()) return;
+    setCategoryCreating(true);
+    setCategoryError(null);
+    try {
+      const created = await onCreateCategory({
+        name: newMainCategory.name.trim(),
+        description: newMainCategory.description.trim(),
+      });
+      setMainCategory(created._id);
+      setSubCategory("");
+      setFormData((prev) => ({ ...prev, category: created._id }));
+      setNewMainCategory(null);
+    } catch (error) {
+      setCategoryError("No se pudo crear la categoría.");
+    } finally {
+      setCategoryCreating(false);
+    }
+  };
+
+  const handleCreateSubCategory = async () => {
+    if (!newSubCategory.name.trim() || !newSubCategory.description.trim()) return;
+    setCategoryCreating(true);
+    setCategoryError(null);
+    try {
+      const created = await onCreateCategory({
+        name: newSubCategory.name.trim(),
+        description: newSubCategory.description.trim(),
+        parentCategory: mainCategory,
+      });
+      setSubCategory(created._id);
+      setFormData((prev) => ({ ...prev, category: created._id }));
+      setNewSubCategory(null);
+    } catch (error) {
+      setCategoryError("No se pudo crear la subcategoría.");
+    } finally {
+      setCategoryCreating(false);
+    }
   };
 
   const handleImageFileChange = async (e) => {
@@ -216,7 +275,7 @@ export default function ProductForm({
           className="input-field"
           value={mainCategory}
           onChange={handleMainCategoryChange}
-          required
+          required={!newMainCategory}
         >
           <option value="">Selecciona una categoría</option>
           {mainCategories.map((category) => (
@@ -224,11 +283,51 @@ export default function ProductForm({
               {category.name}
             </option>
           ))}
+          <option value={NEW_CATEGORY_OPTION}>+ Nueva categoría</option>
         </select>
       </div>
 
-      {/* Subcategoría opcional: solo se muestra si la categoría principal tiene hijas */}
-      {mainCategory && getSubcategories(mainCategory).length > 0 && (
+      {newMainCategory && (
+        <div className="input-group inline-category-form">
+          <Input
+            label="Nombre de la nueva categoría"
+            value={newMainCategory.name}
+            onChange={(e) =>
+              setNewMainCategory((prev) => ({ ...prev, name: e.target.value }))
+            }
+          />
+          <Input
+            label="Descripción"
+            value={newMainCategory.description}
+            onChange={(e) =>
+              setNewMainCategory((prev) => ({ ...prev, description: e.target.value }))
+            }
+          />
+          {categoryError && <span className="field-error">{categoryError}</span>}
+          <div className="form-actions">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCreateMainCategory}
+              disabled={categoryCreating}
+            >
+              {categoryCreating ? "Creando..." : "Crear categoría"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setNewMainCategory(null)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Subcategoría opcional: se muestra siempre que haya categoría principal,
+          para poder crear la primera subcategoría aunque todavía no tenga ninguna */}
+      {mainCategory && (
         <div className="input-group">
           <label htmlFor="subCategory" className="input-label">
             Subcategoría (opcional)
@@ -246,7 +345,46 @@ export default function ProductForm({
                 {subcat.name}
               </option>
             ))}
+            <option value={NEW_CATEGORY_OPTION}>+ Nueva subcategoría</option>
           </select>
+        </div>
+      )}
+
+      {newSubCategory && (
+        <div className="input-group inline-category-form">
+          <Input
+            label="Nombre de la nueva subcategoría"
+            value={newSubCategory.name}
+            onChange={(e) =>
+              setNewSubCategory((prev) => ({ ...prev, name: e.target.value }))
+            }
+          />
+          <Input
+            label="Descripción"
+            value={newSubCategory.description}
+            onChange={(e) =>
+              setNewSubCategory((prev) => ({ ...prev, description: e.target.value }))
+            }
+          />
+          {categoryError && <span className="field-error">{categoryError}</span>}
+          <div className="form-actions">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCreateSubCategory}
+              disabled={categoryCreating}
+            >
+              {categoryCreating ? "Creando..." : "Crear subcategoría"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setNewSubCategory(null)}
+            >
+              Cancelar
+            </Button>
+          </div>
         </div>
       )}
 

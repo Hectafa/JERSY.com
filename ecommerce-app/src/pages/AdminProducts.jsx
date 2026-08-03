@@ -3,7 +3,7 @@ import ProductForm from "../components/Admin/ProductForm";
 import Button from "../components/common/Button";
 import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
 import Loading from "../components/common/Loading/Loading";
-import { getAllCategories } from "../services/categoryService";
+import { createCategory, getAllCategories } from "../services/categoryService";
 import {
   createProduct,
   deleteProduct,
@@ -25,16 +25,18 @@ export default function AdminProducts() {
     setProducts(results || []);
   };
 
+  const loadCategories = async () => {
+    const categoryList = await getAllCategories();
+    setCategories(categoryList || []);
+    return categoryList || [];
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
         setError(null);
-        const [, categoryList] = await Promise.all([
-          loadProducts(),
-          getAllCategories(),
-        ]);
-        setCategories(categoryList || []);
+        await Promise.all([loadProducts(), loadCategories()]);
       } catch (err) {
         setError("No se pudieron cargar los productos.");
       } finally {
@@ -43,6 +45,14 @@ export default function AdminProducts() {
     }
     loadData();
   }, []);
+
+  // Permite crear una categoría (o subcategoría, si viene con parentCategory)
+  // desde el propio formulario de producto, sin salir a otra pantalla.
+  const handleCreateCategory = async (data) => {
+    const created = await createCategory(data);
+    await loadCategories();
+    return created;
+  };
 
   const handleNew = () => {
     setEditingProduct(null);
@@ -119,6 +129,7 @@ export default function AdminProducts() {
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             categories={categories}
+            onCreateCategory={handleCreateCategory}
             initialValues={editingProduct || {}}
             isEdit={!!editingProduct}
           />

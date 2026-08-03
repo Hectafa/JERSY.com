@@ -34,11 +34,26 @@ const PaymentForm = ({
     }
   }, [initialValues]);
 
+  const formatCardNumber = (value) => {
+    const digits = value.replace(/\D/g, "").slice(0, 16);
+    return digits.match(/.{1,4}/g)?.join("-") || "";
+  };
+
+  const formatExpiryDate = (value) => {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+    if (digits.length <= 2) return digits;
+    return digits.slice(0, 2) + "/" + digits.slice(2);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let nextValue = value;
+    if (name === "cardNumber") nextValue = formatCardNumber(value);
+    if (name === "expiryDate") nextValue = formatExpiryDate(value);
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : nextValue,
     }));
   };
 
@@ -83,6 +98,7 @@ const PaymentForm = ({
         onChange={handleChange}
         pattern="[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}"
         placeHolder="1234-5678-9012-3456"
+        maxLength={19}
         required
         data-testid="checkout-payment-card-number-input"
       />
@@ -104,6 +120,7 @@ const PaymentForm = ({
           onChange={handleChange}
           placeHolder="MM/YY"
           pattern="[0-9]{2}/[0-9]{2}"
+          maxLength={5}
           required
           data-testid="checkout-payment-expiry-input"
         />

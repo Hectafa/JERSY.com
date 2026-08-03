@@ -3,7 +3,9 @@ import { clearCache, getOrFetch } from "./cache";
 
 export async function getAllProducts() {
   return getOrFetch("products:all", async () => {
-    const response = await apiClient.get("/products");
+    // El home no pagina: sin esto, GET /products cae en su límite por
+    // defecto (5) y los productos más nuevos quedan fuera de "Recomendados".
+    const response = await apiClient.get("/products", { params: { limit: 100 } });
     return response.data;
   });
 }

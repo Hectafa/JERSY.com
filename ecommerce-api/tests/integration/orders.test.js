@@ -586,10 +586,10 @@ describe("PUT /api/orders/:id", () => {
     const res = await request(app)
       .put(`/api/orders/${created.body._id}`)
       .set("Authorization", authHeader(token))
-      .send({ status: "shipped" });
+      .send({ status: "delivered" });
 
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe("shipped");
+    expect(res.body.status).toBe("delivered");
   });
 
   it("rechaza un estado inválido", async () => {
@@ -613,8 +613,10 @@ describe("PUT /api/orders/:id", () => {
   });
 });
 
-// NUEVO: el admin puede borrar pedidos, pero solo si ya están cerrados
-// (delivered/cancelled) — un pedido en curso no debe poder eliminarse.
+// NUEVO: el admin puede borrar pedidos, pero solo si ya están entregados —
+// un pedido pendiente todavía representa stock reservado y no debe poder
+// eliminarse. Ya no existe el estado "cancelled": los pedidos solo son
+// pending o delivered.
 describe("DELETE /api/orders/:id", () => {
   const createOrderWithStatus = async (status) => {
     const { user, token } = await createUser();
@@ -648,19 +650,8 @@ describe("DELETE /api/orders/:id", () => {
     expect(await Order.findById(orderId)).toBeNull();
   });
 
-  it("permite a un admin borrar un pedido cancelado", async () => {
-    const { orderId, admin } = await createOrderWithStatus("cancelled");
-
-    const res = await request(app)
-      .delete(`/api/orders/${orderId}`)
-      .set("Authorization", authHeader(admin.token));
-
-    expect(res.status).toBe(204);
-    expect(await Order.findById(orderId)).toBeNull();
-  });
-
-  it("rechaza borrar un pedido que sigue en curso (ej. shipped)", async () => {
-    const { orderId, admin } = await createOrderWithStatus("shipped");
+  it("rechaza borrar un pedido pendiente (no entregado)", async () => {
+    const { orderId, admin } = await createOrderWithStatus("pending");
 
     const res = await request(app)
       .delete(`/api/orders/${orderId}`)

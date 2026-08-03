@@ -9,7 +9,7 @@ const getOrders = async (req, res, next) => {
       .populate("products.productId")
       .populate("address")
       .populate("paymentMethod")
-      .sort({ createdAt: -1});
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
     next(error);
@@ -242,7 +242,7 @@ const updateOrderStatus = async (req, res, next) => {
     );
 
     if (!updated) {
-      return res.status(204).json({ message: "Order not found" });
+      return res.status(404).json({ message: "Order not found" });
     }
 
     res.json(updated);
@@ -251,9 +251,9 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-// NUEVO: el admin puede borrar únicamente pedidos ya cerrados (entregados o
-// cancelados) — un pedido pending/processing/shipped todavía representa
-// stock reservado y trabajo en curso, no debe poder desaparecer del sistema.
+// NUEVO: el admin puede borrar únicamente pedidos ya entregados — un pedido
+// pending todavía representa stock reservado y trabajo en curso, no debe
+// poder desaparecer del sistema.
 const deleteOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -262,9 +262,9 @@ const deleteOrder = async (req, res, next) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    if (!["delivered", "cancelled"].includes(order.status)) {
+    if (order.status !== "delivered") {
       return res.status(400).json({
-        message: "Only delivered or cancelled orders can be deleted",
+        message: "Only delivered orders can be deleted",
       });
     }
 
