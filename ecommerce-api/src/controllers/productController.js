@@ -8,7 +8,7 @@ function computeStock(sizes) {
   return sizes.reduce((sum, s) => sum + Number(s.stock || 0), 0);
 }
 
-// api/products/search?q=iPhone&category=Apple&minPrice=5000&maxPrice=20000&inStock=true&sort=name&order=asc&page=2&limit=5
+
 const searchProducts = async (req, res, next) => {
   try {
     const {
