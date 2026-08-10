@@ -443,7 +443,7 @@
 
 /* Footer Bottom - Mobile First */
 .footer-bottom {
-  background: var(--accent);
+  background: var(--color-black);
   padding: 20px 0;
 }
 
@@ -955,7 +955,7 @@
 
 /* Footer bottom - ÚNICO FONDO OSCURO */
 .footer-bottom {
-  background: var(--accent);
+  background: var(--color-black);
   padding: 16px 0;
 }
 
@@ -1239,6 +1239,23 @@
 
 [data-theme="dark"] .categories-menu-btn:hover {
   background: var(--bg);
+}
+
+[data-theme="dark"] .footer-bottom {
+  background: var(--color-white);
+}
+
+[data-theme="dark"] .copyright {
+  color: var(--color-dark);
+}
+
+[data-theme="dark"] .legal-links a {
+  color: var(--color-dark);
+}
+
+[data-theme="dark"] .legal-links a:hover {
+  color: var(--color-black);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* Print styles */

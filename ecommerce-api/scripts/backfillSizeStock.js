@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import Product, { PRODUCT_SIZES } from "../src/models/Product.js";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 function distributeStock(totalStock) {
   const base = Math.floor(totalStock / PRODUCT_SIZES.length);

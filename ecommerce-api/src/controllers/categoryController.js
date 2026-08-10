@@ -93,7 +93,7 @@ const getProductsByCategoryAndChildren = async (req, res, next) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const products = await Product.find(filters);
+    const products = await Product.find(filters).populate("category");
     const totalProducts = await Product.countDocuments(filters);
     const totalPages = Math.ceil(totalProducts / parseInt(limit));
 

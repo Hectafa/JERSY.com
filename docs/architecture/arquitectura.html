@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arquitectura — 2026-2-ReactFS</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2e; --panel-2:#0e1729; --border:#233252; --border-soft:#1b2740;
+    --text:#e7ecf7; --text-dim:#9fb0cc; --text-faint:#66759a;
+    --accent:#5c7cfa; --accent-2:#22b8cf;
+    --chip-bg:#16213a;
+    --shadow: 0 8px 30px rgba(0,0,0,.35);
+    --radius:12px;
+    --node-w:176px; --node-h:46px;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6fb; --panel:#ffffff; --panel-2:#eef1f8; --border:#dde3f0; --border-soft:#e7ebf5;
+      --text:#141b2e; --text-dim:#4c5872; --text-faint:#8894ab;
+      --chip-bg:#eef1f8;
+      --shadow: 0 8px 24px rgba(30,40,70,.08);
+      color-scheme: light;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:var(--bg); color:var(--text); overflow:hidden;
+  }
+  #app{ display:flex; flex-direction:column; height:100vh; }
+
+  /* ---------- Top bar ---------- */
+  header.topbar{
+    display:flex; align-items:center; gap:16px;
+    padding:10px 16px; border-bottom:1px solid var(--border); background:var(--panel);
+    flex-shrink:0; z-index:20; box-shadow: var(--shadow);
+  }
+  .brand{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .brand b{ font-size:14.5px; letter-spacing:.2px; white-space:nowrap; }
+  .brand span{ font-size:11px; color:var(--text-faint); white-space:nowrap; }
+  .search-wrap{ position:relative; flex:1; max-width:360px; }
+  .search-wrap input{
+    width:100%; padding:8px 12px 8px 32px; border-radius:9px; border:1px solid var(--border);
+    background:var(--panel-2); color:var(--text); font-size:13px; outline:none;
+  }
+  .search-wrap input:focus{ border-color:var(--accent); }
+  .search-wrap svg{ position:absolute; left:9px; top:50%; transform:translateY(-50%); opacity:.55; }
+  .toolbar{ display:flex; align-items:center; gap:6px; margin-left:auto; }
+  .toolbar button{
+    display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:8px; border:1px solid var(--border);
+    background:var(--panel-2); color:var(--text-dim); font-size:12.5px; cursor:pointer; white-space:nowrap;
+  }
+  .toolbar button:hover{ color:var(--text); border-color:var(--accent); }
+  .toolbar button.icon-only{ padding:7px 8px; }
+  #flowsToggle{ display:none; }
+
+  /* ---------- Main layout ---------- */
+  main.layout{ flex:1; display:flex; min-height:0; position:relative; }
+  #canvasWrap{ flex:1; position:relative; overflow:hidden; background:
+      radial-gradient(circle at 1px 1px, var(--border-soft) 1px, transparent 1px) 0 0/22px 22px, var(--bg);
+  }
+  svg#graph{ width:100%; height:100%; display:block; cursor:grab; }
+  svg#graph.dragging{ cursor:grabbing; }
+
+  .node rect{ stroke-width:1.4; }
+  .node text{ font-size:11px; font-weight:600; fill:#fff; pointer-events:none; }
+  .node .sub{ font-size:8.5px; font-weight:500; fill:rgba(255,255,255,.78); pointer-events:none; }
+  .node{ cursor:pointer; transition: opacity .18s ease; }
+  .node.dim{ opacity:.14; }
+  .node.hidden-layer{ display:none; }
+  .node.hover rect{ filter: drop-shadow(0 0 8px rgba(255,255,255,.35)); }
+  .node.selected rect{ stroke:#fff; stroke-width:2.4; }
+  .node .badge{ font-size:9.5px; font-weight:800; fill:#fff; }
+  .node .badge-circle{ fill:#0b1220; stroke:#fff; stroke-width:1.4; }
+
+  .edge{ fill:none; transition: opacity .18s ease, stroke-width .18s ease; }
+  .edge.dim{ opacity:.05; }
+  .edge.flow-edge{ stroke-width:2.6; opacity:1; }
+  .edge.hidden-layer{ display:none; }
+
+  .layer-label{ font-size:11px; font-weight:700; fill: var(--text-faint); letter-spacing:.4px; text-transform:uppercase; }
+
+  .tooltip{
+    position:fixed; z-index:60; max-width:300px; pointer-events:none;
+    background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    box-shadow: var(--shadow); font-size:12.5px; line-height:1.45; color:var(--text);
+    opacity:0; transform: translateY(4px); transition: opacity .12s ease, transform .12s ease;
+  }
+  .tooltip.show{ opacity:1; transform:translateY(0); }
+  .tooltip .t-title{ font-weight:700; font-size:13px; margin-bottom:2px; display:flex; align-items:center; gap:6px;}
+  .tooltip .t-type{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; padding:1px 6px; border-radius:5px; color:#fff; }
+  .tooltip .t-desc{ color:var(--text-dim); margin-top:4px; }
+  .tooltip .t-meta{ margin-top:6px; font-size:11px; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:6px; }
+
+  /* ---------- Side panel ---------- */
+  aside#panel{
+    width:360px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--border);
+    display:flex; flex-direction:column; min-height:0; z-index:15;
+  }
+  .panel-tabs{ display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .panel-tabs button{
+    flex:1; padding:11px 6px; background:none; border:none; color:var(--text-faint); font-size:12.5px;
+    font-weight:700; cursor:pointer; border-bottom:2px solid transparent; letter-spacing:.2px;
+  }
+  .panel-tabs button.active{ color:var(--accent); border-bottom-color:var(--accent); }
+  .panel-body{ flex:1; overflow-y:auto; padding:12px; min-height:0; }
+  .panel-body::-webkit-scrollbar{ width:8px; }
+  .panel-body::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+
+  .flow-actor-group{ margin-bottom:14px; }
+  .flow-actor-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-faint); font-weight:800; margin:0 0 6px 2px; }
+  .flow-card{
+    border:1px solid var(--border); background:var(--panel-2); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+    cursor:pointer; transition: border-color .15s, transform .1s;
+  }
+  .flow-card:hover{ border-color:var(--accent); }
+  .flow-card.active{ border-color:var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel-2)); }
+  .flow-card .fname{ font-size:13px; font-weight:700; margin-bottom:3px; }
+  .flow-card .fdesc{ font-size:11.5px; color:var(--text-dim); line-height:1.4; display:none; }
+  .flow-card.active .fdesc{ display:block; margin-top:6px; }
+  .flow-steps{ display:none; margin-top:9px; padding-top:9px; border-top:1px dashed var(--border); }
+  .flow-card.active .flow-steps{ display:block; }
+  .flow-step{
+    display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:7px; font-size:12px; cursor:pointer;
+  }
+  .flow-step:hover{ background:var(--chip-bg); }
+  .flow-step .snum{
+    width:17px; height:17px; border-radius:50%; background:var(--accent); color:#fff; font-size:9.5px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .flow-step .stype{ width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+  .flow-clear{
+    width:100%; margin-top:4px; padding:7px; border-radius:8px; border:1px solid var(--border); background:transparent;
+    color:var(--text-dim); font-size:12px; cursor:pointer;
+  }
+  .flow-clear:hover{ color:var(--text); border-color:var(--accent); }
+
+  .legend-section{ margin-bottom:16px; }
+  .legend-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-faint); font-weight:800; margin:0 0 8px 2px; }
+  .legend-row{ display:flex; align-items:center; gap:9px; padding:5px 4px; border-radius:7px; font-size:12.5px; cursor:pointer; user-select:none; }
+  .legend-row:hover{ background:var(--chip-bg); }
+  .legend-row.off{ opacity:.35; }
+  .legend-swatch{ width:13px; height:13px; border-radius:4px; flex-shrink:0; }
+  .legend-line{ width:22px; height:0; border-top-width:3px; border-top-style:solid; flex-shrink:0; }
+  .legend-line.dashed{ border-top-style:dashed; }
+  .legend-count{ margin-left:auto; font-size:11px; color:var(--text-faint); }
+
+  .node-info{ border:1px solid var(--border); background:var(--panel-2); border-radius:10px; padding:12px; margin-bottom:14px; }
+  .node-info .ni-empty{ color:var(--text-faint); font-size:12.5px; text-align:center; padding:10px 4px; }
+  .node-info .ni-title{ font-weight:700; font-size:14px; margin-bottom:4px; }
+  .node-info .ni-desc{ font-size:12.5px; color:var(--text-dim); line-height:1.5; margin:6px 0; }
+  .ni-rel{ margin-top:8px; }
+  .ni-rel-title{ font-size:10.5px; color:var(--text-faint); font-weight:700; text-transform:uppercase; margin-bottom:5px; }
+  .ni-rel-item{ font-size:12px; padding:4px 6px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px;}
+  .ni-rel-item:hover{ background:var(--chip-bg); }
+  .ni-rel-item .dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  footer.statusbar{
+    flex-shrink:0; display:flex; align-items:center; gap:14px; padding:6px 14px; border-top:1px solid var(--border);
+    background:var(--panel); font-size:11px; color:var(--text-faint);
+  }
+  footer.statusbar b{ color:var(--text-dim); }
+  .statusbar .spacer{ flex:1; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 880px){
+    aside#panel{
+      position:fixed; top:0; right:0; bottom:0; width:min(88vw, 380px);
+      transform: translateX(100%); transition: transform .22s ease; box-shadow: -12px 0 30px rgba(0,0,0,.3);
+    }
+    aside#panel.open{ transform:translateX(0); }
+    #flowsToggle{ display:flex; }
+    .brand span{ display:none; }
+    .search-wrap{ max-width:150px; }
+  }
+  #scrim{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:14;
+  }
+  #scrim.show{ display:block; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <b>🗺️ Arquitectura — 2026-2-ReactFS</b>
+      <span>ecommerce-app (React) · ecommerce-api (Express/MongoDB)</span>
+    </div>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="search" type="text" placeholder="Buscar componente, ruta, modelo…" autocomplete="off"/>
+    </div>
+    <div class="toolbar">
+      <button id="zoomOut" class="icon-only" title="Alejar">－</button>
+      <button id="zoomFit" title="Ajustar a pantalla">Ajustar</button>
+      <button id="zoomIn" class="icon-only" title="Acercar">＋</button>
+      <button id="flowsToggle">Flujos ▸</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div id="canvasWrap">
+      <svg id="graph" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="scrim"></div>
+    <aside id="panel">
+      <div class="panel-tabs">
+        <button class="tab-btn active" data-tab="flows">Flujos</button>
+        <button class="tab-btn" data-tab="legend">Capas &amp; Leyenda</button>
+        <button class="tab-btn" data-tab="info">Inspector</button>
+      </div>
+      <div class="panel-body" id="tab-flows"></div>
+      <div class="panel-body" id="tab-legend" style="display:none;"></div>
+      <div class="panel-body" id="tab-info" style="display:none;"></div>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <span><b id="stat-nodes">0</b> nodos</span>
+    <span><b id="stat-edges">0</b> relaciones</span>
+    <span><b id="stat-flows">0</b> flujos</span>
+    <span class="spacer"></span>
+    <span id="stat-selection">Seleccioná un flujo o pasá el mouse sobre un nodo para ver detalles</span>
+  </footer>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+/* =========================================================================
+   DATOS DEL GRAFO — mismo contenido que docs/architecture/arquitectura.json
+   ========================================================================= */
+const GRAPH = {
+  "meta": {
+    "project": "2026-2-ReactFS (ecommerce-api + ecommerce-app)",
+    "generatedAt": "2026-08-06",
+    "description": "Grafo de arquitectura del monorepo: frontend React (páginas, componentes, contexto, servicios) y backend Express/Mongoose (rutas, middlewares, controladores, modelos) + MongoDB. Pensado para ser consumido por agentes IA y para alimentar el diagrama interactivo docs/architecture/arquitectura.html.",
+    "stack": {
+      "backend": "Node.js (ESM) + Express 5 + Mongoose 9 (MongoDB), JWT auth, Multer, express-validator",
+      "frontend": "React 19 + React Router 7 + Axios + Context API (sin Redux), CRA"
+    },
+    "layers": [
+      { "id": 1, "name": "Páginas (rutas de React Router)" },
+      { "id": 2, "name": "Componentes UI" },
+      { "id": 3, "name": "Contexto (estado global)" },
+      { "id": 4, "name": "Servicios (cliente API)" },
+      { "id": 5, "name": "Rutas Express" },
+      { "id": 6, "name": "Middlewares" },
+      { "id": 7, "name": "Controladores" },
+      { "id": 8, "name": "Modelos (Mongoose)" },
+      { "id": 9, "name": "Base de datos" }
+    ],
+    "edgeKinds": {
+      "render": "un nodo renderiza/monta a otro",
+      "use": "un nodo usa/llama a otro (hook de contexto o función de servicio)",
+      "http": "llamada de red HTTP (apiClient -> ruta Express)",
+      "chain": "cadena de manejo de request (ruta -> middleware -> controlador)",
+      "query": "el controlador consulta/escribe sobre un modelo",
+      "persist": "el modelo persiste en la base de datos",
+      "ref": "referencia (foreign key) entre modelos de Mongoose",
+      "global": "middleware transversal aplicado globalmente",
+      "compose": "composición estructural de UI",
+      "nav": "navegación entre páginas"
+    }
+  },
+  "nodes": [
+    { "id": "pg-home", "label": "Home", "layer": 1, "type": "page", "desc": "Página de inicio. Carga productos (getAllProducts) y muestra BannerCarousel + grid de recomendados." },
+    { "id": "pg-login", "label": "Login", "layer": 1, "type": "page", "desc": "Página de inicio de sesión; envuelve LoginForm." },
+    { "id": "pg-register", "label": "Register", "layer": 1, "type": "page", "desc": "Página de registro; envuelve RegisterForm." },
+    { "id": "pg-product", "label": "Product", "layer": 1, "type": "page", "desc": "Lee :productId de la URL y renderiza ProductDetails." },
+    { "id": "pg-category", "label": "CategoryPage", "layer": 1, "type": "page", "desc": "Lee :categoryId de la URL y renderiza CategoryProducts." },
+    { "id": "pg-search", "label": "SearchResults", "layer": 1, "type": "page", "desc": "Página de resultados de búsqueda; envuelve SearchResultsList." },
+    { "id": "pg-cart", "label": "Cart", "layer": 1, "type": "page", "desc": "Página de carrito: barra de envío gratis, CartView, totales, botón 'Proceder al pago'." },
+    { "id": "pg-wishlist", "label": "WishList", "layer": 1, "type": "page", "desc": "Lista de deseos del usuario autenticado (ProtectedRoute)." },
+    { "id": "pg-checkout", "label": "Checkout", "layer": 1, "type": "page", "desc": "Orquesta el checkout: dirección, método de pago, revisión, cobro y creación de la orden (ProtectedRoute)." },
+    { "id": "pg-orders", "label": "Orders", "layer": 1, "type": "page", "desc": "Historial de pedidos del cliente: lista + panel de detalle (ProtectedRoute)." },
+    { "id": "pg-orderconf", "label": "OrderConfirmation", "layer": 1, "type": "page", "desc": "Muestra el recibo del pedido recién creado, recibido vía location.state (no se refetch al backend)." },
+    { "id": "pg-profile", "label": "Profile", "layer": 1, "type": "page", "desc": "Página de perfil; envuelve ProfileCard (ProtectedRoute)." },
+    { "id": "pg-editprofile", "label": "EditProfile", "layer": 1, "type": "page", "desc": "Edición de nombre/email y subida de avatar (ProtectedRoute)." },
+    { "id": "pg-changepwd", "label": "ChangePassword", "layer": 1, "type": "page", "desc": "Formulario de cambio de contraseña (ProtectedRoute)." },
+    { "id": "pg-adminproducts", "label": "AdminProducts", "layer": 1, "type": "page", "desc": "CRUD admin de productos + creación de categorías (ProtectedRoute allowedRoles=[admin])." },
+    { "id": "pg-adminorders", "label": "AdminOrders", "layer": 1, "type": "page", "desc": "Gestión admin de pedidos: tabs por estado, cambio de estado, borrado si delivered." },
+    { "id": "pg-adminusers", "label": "AdminUsers", "layer": 1, "type": "page", "desc": "Listado admin de usuarios (solo lectura)." },
+    { "id": "pg-protectedroute", "label": "ProtectedRoute", "layer": 1, "type": "page", "desc": "Guard de rutas: espera a que AuthContext resuelva 'loading', redirige a /login si no autenticado, valida allowedRoles." },
+
+    { "id": "cmp-layout", "label": "Layout", "layer": 2, "type": "component", "desc": "Envuelve Header + contenido de rutas (Suspense) + Footer en toda la app." },
+    { "id": "cmp-header", "label": "Header", "layer": 2, "type": "component", "desc": "Barra superior: navegación, buscador, badge de carrito (CartContext.count), menú de usuario/avatar, logout." },
+    { "id": "cmp-nav", "label": "Navigation", "layer": 2, "type": "component", "desc": "Menú de categorías / navegación principal." },
+    { "id": "cmp-footer", "label": "Footer", "layer": 2, "type": "component", "desc": "Pie de página." },
+    { "id": "cmp-loginform", "label": "LoginForm", "layer": 2, "type": "component", "desc": "Formulario de login con validación cliente; llama a AuthContext.login()." },
+    { "id": "cmp-registerform", "label": "RegisterForm", "layer": 2, "type": "component", "desc": "Formulario de registro con validación cliente (nombre/email/password/confirmar/teléfono)." },
+    { "id": "cmp-productcard", "label": "ProductCard", "layer": 2, "type": "component", "desc": "Tarjeta de producto reutilizable (Home, Categoría, Búsqueda, Wishlist)." },
+    { "id": "cmp-productdetails", "label": "ProductDetails", "layer": 2, "type": "component", "desc": "Detalle de producto: selección de talla, agregar al carrito, agregar a wishlist." },
+    { "id": "cmp-categoryproducts", "label": "CategoryProducts", "layer": 2, "type": "component", "desc": "Grid de productos de una categoría, incluyendo subcategorías." },
+    { "id": "cmp-searchresultslist", "label": "SearchResultsList", "layer": 2, "type": "component", "desc": "Lista de resultados de búsqueda con control de orden (sort/order)." },
+    { "id": "cmp-cartview", "label": "CartView", "layer": 2, "type": "component", "desc": "Lista de ítems del carrito con controles de cantidad/eliminar." },
+    { "id": "cmp-addressform", "label": "AddressForm", "layer": 2, "type": "component", "desc": "Formulario de alta de dirección de envío (lazy)." },
+    { "id": "cmp-paymentform", "label": "PaymentForm", "layer": 2, "type": "component", "desc": "Formulario de alta de método de pago (lazy)." },
+    { "id": "cmp-profilecard", "label": "ProfileCard", "layer": 2, "type": "component", "desc": "Resumen de perfil con accesos a editar perfil y cambiar contraseña." },
+    { "id": "cmp-productform", "label": "ProductForm (Admin)", "layer": 2, "type": "component", "desc": "Formulario admin de alta/edición de producto, incluye subida de imagen y tallas/stock." },
+    { "id": "cmp-summarysection", "label": "SummarySection", "layer": 2, "type": "component", "desc": "Resumen de checkout: envío, impuestos, total; dispara cobro + creación de la orden." },
+
+    { "id": "ctx-auth", "label": "AuthContext", "layer": 3, "type": "context", "desc": "Estado de sesión (user, loading, isAuthenticated). Decodifica el JWT localmente, hidrata el perfil, expone login/logout/updateUser." },
+    { "id": "ctx-cart", "label": "CartContext", "layer": 3, "type": "context", "desc": "Estado del carrito: persistido en localStorage y sincronizado con el backend cuando hay sesión. addItem/updateQuantity/removeItem/clearCart." },
+    { "id": "ctx-theme", "label": "ThemeContext", "layer": 3, "type": "context", "desc": "Tema claro/oscuro, persistido en localStorage, setea atributo data-theme en <html>." },
+
+    { "id": "svc-apiclient", "label": "apiClient", "layer": 4, "type": "service", "desc": "Instancia Axios centralizada: baseURL (REACT_APP_API_URL), timeout 10s, interceptor de token Authorization y clasificación de errores (kind: NOT_FOUND/UNAUTHORIZED/VALIDATION/...)." },
+    { "id": "svc-auth", "label": "authService", "layer": 4, "type": "service", "desc": "register()/login() -> POST /auth/register, /auth/login." },
+    { "id": "svc-cart", "label": "cartService", "layer": 4, "type": "service", "desc": "CRUD de carrito -> /cart, /cart/:id, /cart/user/:id." },
+    { "id": "svc-category", "label": "categoryService", "layer": 4, "type": "service", "desc": "CRUD de categorías + productos por categoría (con caché) -> /categories." },
+    { "id": "svc-order", "label": "orderService", "layer": 4, "type": "service", "desc": "Creación/consulta/actualización/borrado de pedidos -> /orders." },
+    { "id": "svc-payment", "label": "paymentService", "layer": 4, "type": "service", "desc": "CRUD de métodos de pago + cobro simulado -> /payment-methods." },
+    { "id": "svc-products", "label": "productsService", "layer": 4, "type": "service", "desc": "Listado/búsqueda/CRUD de productos + subida de imagen (con caché) -> /products." },
+    { "id": "svc-shipping", "label": "shippingService", "layer": 4, "type": "service", "desc": "CRUD de direcciones de envío -> /addresses." },
+    { "id": "svc-user", "label": "userService", "layer": 4, "type": "service", "desc": "Perfil, avatar, cambio de contraseña, listado admin -> /users." },
+    { "id": "svc-wishlist", "label": "wishlistService", "layer": 4, "type": "service", "desc": "Alta/baja/consulta de wishlist -> /wishlist." },
+    { "id": "svc-cache", "label": "cache", "layer": 4, "type": "service", "desc": "Caché en memoria basada en Map (TTL 60s), usada por productsService y categoryService; se invalida en cada mutación." },
+
+    { "id": "rt-auth", "label": "authRoutes", "layer": 5, "type": "route", "desc": "POST /api/auth/register, POST /api/auth/login." },
+    { "id": "rt-user", "label": "userRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/users, incluye /:id/avatar y /:id/password." },
+    { "id": "rt-product", "label": "productRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/products, incluye /search y /upload-image." },
+    { "id": "rt-category", "label": "categoryRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/categories, incluye /:id/products." },
+    { "id": "rt-cart", "label": "cartRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/cart, incluye /add." },
+    { "id": "rt-address", "label": "addressRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/addresses (siempre escopado a req.user.userId)." },
+    { "id": "rt-payment", "label": "paymentMethodRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/payment-methods, incluye /me y /:id/charge." },
+    { "id": "rt-order", "label": "orderRoutes", "layer": 5, "type": "route", "desc": "GET/POST/PUT/DELETE /api/orders, incluye /user/:id." },
+    { "id": "rt-wishlist", "label": "wishlistRoutes", "layer": 5, "type": "route", "desc": "GET/POST/DELETE /api/wishlist, incluye /user/:id y /:id/product." },
+
+    { "id": "mw-auth", "label": "authMiddleware", "layer": 6, "type": "middleware", "desc": "Verifica JWT (Authorization: Bearer <token>), setea req.user = {userId, name, role}. 401 si falta/inválido/expirado." },
+    { "id": "mw-isadmin", "label": "isAdminMiddleware", "layer": 6, "type": "middleware", "desc": "Exige req.user.role === 'admin'. Siempre encadenado después de authMiddleware." },
+    { "id": "mw-validate", "label": "validation", "layer": 6, "type": "middleware", "desc": "Ejecuta validationResult() de express-validator; responde 422 {errors} si hay errores." },
+    { "id": "mw-uploadavatar", "label": "uploadAvatar", "layer": 6, "type": "middleware", "desc": "Multer: guarda avatar en public/uploads/avatars (2MB máx, jpeg/png/webp), borra el avatar anterior." },
+    { "id": "mw-uploadproduct", "label": "uploadProductImage", "layer": 6, "type": "middleware", "desc": "Multer: guarda imagen de producto en public/uploads/products (5MB máx, jpeg/png/webp)." },
+    { "id": "mw-errorhandler", "label": "errorHandler", "layer": 6, "type": "middleware", "desc": "Middleware de error (4 args), último en app.js: loguea a logs/error.log y responde 500 genérico." },
+    { "id": "mw-logger", "label": "logger", "layer": 6, "type": "middleware", "desc": "Loguea cada request como 'ISO | METHOD | url'. Montado globalmente tras express.json()." },
+
+    { "id": "ctl-auth", "label": "authController", "layer": 7, "type": "controller", "desc": "register (hash + crea User), login (bcrypt.compare + emite JWT access 1h + refresh 7d)." },
+    { "id": "ctl-user", "label": "userController", "layer": 7, "type": "controller", "desc": "getUsers, getUserById, createUser, updateUser, updateAvatar, changePassword, deleteUser." },
+    { "id": "ctl-product", "label": "productController", "layer": 7, "type": "controller", "desc": "searchProducts, getProducts, getProductById, createProduct, updateProduct, uploadProductImageController, deleteProduct. computeStock(sizes)." },
+    { "id": "ctl-category", "label": "categoryController", "layer": 7, "type": "controller", "desc": "getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getProductsByCategoryAndChildren." },
+    { "id": "ctl-cart", "label": "cartController", "layer": 7, "type": "controller", "desc": "getCarts, getCartById, getCartByUser, createCart, updateCart, deleteCart, addProductToCart (valida stock por talla)." },
+    { "id": "ctl-address", "label": "addressController", "layer": 7, "type": "controller", "desc": "getUserAddresses, getAddressById, createAddress (desmarca otros default), updateAddress, deleteAddress." },
+    { "id": "ctl-payment", "label": "paymentMethodController", "layer": 7, "type": "controller", "desc": "CRUD de métodos de pago + chargePaymentMethod (gateway simulado: tarjeta terminada en 0000 = rechazada)." },
+    { "id": "ctl-order", "label": "orderController", "layer": 7, "type": "controller", "desc": "getOrders, getOrderById, createOrder (recalcula precio/tax 16%/total server-side, reserva stock atómica, ventana anti-duplicado 60s), updateOrderStatus, deleteOrder (solo si delivered)." },
+    { "id": "ctl-wishlist", "label": "wishlistController", "layer": 7, "type": "controller", "desc": "getWishlists, getWishlistByUser, addProductToWishlist, removeProductFromWishlist, deleteWishlist." },
+
+    { "id": "mdl-user", "label": "User", "layer": 8, "type": "model", "desc": "name, email (único), password (hash), role (customer|admin), avatar." },
+    { "id": "mdl-product", "label": "Product", "layer": 8, "type": "model", "desc": "name, description, price, stock (derivado de sizes), sizes:[{size, stock}], imageURL, category (ref Category)." },
+    { "id": "mdl-category", "label": "Category", "layer": 8, "type": "model", "desc": "name, description, imageURL, parentCategory (ref Category, auto-referencia para subcategorías)." },
+    { "id": "mdl-cart", "label": "Cart", "layer": 8, "type": "model", "desc": "user (ref User), products:[{product (ref Product), size, quantity}]." },
+    { "id": "mdl-order", "label": "Order", "layer": 8, "type": "model", "desc": "user, products:[{productId, size, quantity, price}], address, paymentMethod, shippingCost, tax, totalPrice, status (pending|delivered), paymentStatus." },
+    { "id": "mdl-address", "label": "Address", "layer": 8, "type": "model", "desc": "user (ref User), address, city, state, postalCode, country, phone, isDefault, addressType." },
+    { "id": "mdl-payment", "label": "PaymentMethod", "layer": 8, "type": "model", "desc": "user (ref User), type, cardNumber, cardHolderName, expiryDate, isDefault, isActive." },
+    { "id": "mdl-wishlist", "label": "WishList", "layer": 8, "type": "model", "desc": "user (ref User), products: [ref Product]." },
+
+    { "id": "db-mongo", "label": "MongoDB", "layer": 9, "type": "database", "desc": "Base de datos vía Mongoose (connectDB en db.conf.js). MONGODB_URI, exit(1) si falla la conexión." }
+  ],
+  "edges": [
+    { "from": "cmp-layout", "to": "cmp-header", "kind": "compose" },
+    { "from": "cmp-layout", "to": "cmp-nav", "kind": "compose" },
+    { "from": "cmp-layout", "to": "cmp-footer", "kind": "compose" },
+    { "from": "cmp-header", "to": "ctx-theme", "kind": "use" },
+    { "from": "cmp-header", "to": "ctx-cart", "kind": "use" },
+    { "from": "cmp-header", "to": "ctx-auth", "kind": "use" },
+    { "from": "cmp-header", "to": "pg-search", "kind": "nav" },
+    { "from": "cmp-nav", "to": "pg-category", "kind": "nav" },
+
+    { "from": "pg-register", "to": "cmp-registerform", "kind": "render" },
+    { "from": "cmp-registerform", "to": "svc-auth", "kind": "use" },
+    { "from": "pg-login", "to": "cmp-loginform", "kind": "render" },
+    { "from": "cmp-loginform", "to": "ctx-auth", "kind": "use" },
+    { "from": "ctx-auth", "to": "svc-auth", "kind": "use" },
+    { "from": "ctx-auth", "to": "svc-user", "kind": "use" },
+
+    { "from": "pg-home", "to": "svc-products", "kind": "use" },
+    { "from": "pg-home", "to": "cmp-productcard", "kind": "render" },
+    { "from": "pg-category", "to": "cmp-categoryproducts", "kind": "render" },
+    { "from": "cmp-categoryproducts", "to": "svc-category", "kind": "use" },
+    { "from": "cmp-categoryproducts", "to": "cmp-productcard", "kind": "render" },
+    { "from": "cmp-productcard", "to": "pg-product", "kind": "nav" },
+    { "from": "pg-product", "to": "cmp-productdetails", "kind": "render" },
+    { "from": "cmp-productdetails", "to": "svc-products", "kind": "use" },
+    { "from": "cmp-productdetails", "to": "ctx-cart", "kind": "use" },
+    { "from": "cmp-productdetails", "to": "svc-wishlist", "kind": "use" },
+    { "from": "cmp-productdetails", "to": "pg-wishlist", "kind": "nav" },
+    { "from": "pg-search", "to": "cmp-searchresultslist", "kind": "render" },
+    { "from": "cmp-searchresultslist", "to": "svc-products", "kind": "use" },
+    { "from": "cmp-searchresultslist", "to": "cmp-productcard", "kind": "render" },
+
+    { "from": "cmp-productcard", "to": "ctx-cart", "kind": "use" },
+    { "from": "pg-cart", "to": "cmp-cartview", "kind": "render" },
+    { "from": "cmp-cartview", "to": "ctx-cart", "kind": "use" },
+    { "from": "ctx-cart", "to": "svc-cart", "kind": "use" },
+    { "from": "pg-cart", "to": "pg-checkout", "kind": "nav" },
+
+    { "from": "pg-wishlist", "to": "svc-wishlist", "kind": "use" },
+    { "from": "pg-wishlist", "to": "cmp-productcard", "kind": "render" },
+
+    { "from": "pg-checkout", "to": "cmp-addressform", "kind": "render" },
+    { "from": "cmp-addressform", "to": "svc-shipping", "kind": "use" },
+    { "from": "pg-checkout", "to": "cmp-paymentform", "kind": "render" },
+    { "from": "cmp-paymentform", "to": "svc-payment", "kind": "use" },
+    { "from": "pg-checkout", "to": "cmp-summarysection", "kind": "render" },
+    { "from": "cmp-summarysection", "to": "cmp-cartview", "kind": "render" },
+    { "from": "cmp-summarysection", "to": "svc-payment", "kind": "use" },
+    { "from": "cmp-summarysection", "to": "svc-order", "kind": "use" },
+    { "from": "cmp-summarysection", "to": "ctx-cart", "kind": "use" },
+    { "from": "cmp-summarysection", "to": "pg-orderconf", "kind": "nav" },
+
+    { "from": "pg-orders", "to": "svc-order", "kind": "use" },
+    { "from": "pg-adminorders", "to": "svc-order", "kind": "use" },
+    { "from": "pg-adminproducts", "to": "cmp-productform", "kind": "render" },
+    { "from": "cmp-productform", "to": "svc-products", "kind": "use" },
+    { "from": "cmp-productform", "to": "svc-category", "kind": "use" },
+    { "from": "pg-adminproducts", "to": "svc-category", "kind": "use" },
+    { "from": "pg-adminusers", "to": "svc-user", "kind": "use" },
+
+    { "from": "pg-profile", "to": "cmp-profilecard", "kind": "render" },
+    { "from": "cmp-profilecard", "to": "pg-editprofile", "kind": "nav" },
+    { "from": "cmp-profilecard", "to": "pg-changepwd", "kind": "nav" },
+    { "from": "pg-editprofile", "to": "svc-user", "kind": "use" },
+    { "from": "pg-editprofile", "to": "ctx-auth", "kind": "use" },
+    { "from": "pg-changepwd", "to": "svc-user", "kind": "use" },
+
+    { "from": "pg-protectedroute", "to": "ctx-auth", "kind": "use" },
+
+    { "from": "svc-auth", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-cart", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-category", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-category", "to": "svc-cache", "kind": "use" },
+    { "from": "svc-order", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-payment", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-products", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-products", "to": "svc-cache", "kind": "use" },
+    { "from": "svc-shipping", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-user", "to": "svc-apiclient", "kind": "use" },
+    { "from": "svc-wishlist", "to": "svc-apiclient", "kind": "use" },
+
+    { "from": "svc-apiclient", "to": "rt-auth", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-user", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-product", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-category", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-cart", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-address", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-payment", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-order", "kind": "http" },
+    { "from": "svc-apiclient", "to": "rt-wishlist", "kind": "http" },
+
+    { "from": "mw-logger", "to": "rt-auth", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-user", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-product", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-category", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-cart", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-address", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-payment", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-order", "kind": "global" },
+    { "from": "mw-logger", "to": "rt-wishlist", "kind": "global" },
+
+    { "from": "rt-auth", "to": "mw-validate", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-auth", "kind": "chain" },
+
+    { "from": "rt-user", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-auth", "to": "mw-isadmin", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-user", "kind": "chain" },
+    { "from": "mw-auth", "to": "mw-uploadavatar", "kind": "chain" },
+    { "from": "mw-uploadavatar", "to": "ctl-user", "kind": "chain" },
+    { "from": "mw-auth", "to": "mw-validate", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-user", "kind": "chain" },
+    { "from": "mw-auth", "to": "ctl-user", "kind": "chain" },
+
+    { "from": "rt-product", "to": "ctl-product", "kind": "chain" },
+    { "from": "rt-product", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "mw-uploadproduct", "kind": "chain" },
+    { "from": "mw-uploadproduct", "to": "ctl-product", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-product", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-product", "kind": "chain" },
+
+    { "from": "rt-category", "to": "ctl-category", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-category", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-category", "kind": "chain" },
+
+    { "from": "rt-cart", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-auth", "to": "ctl-cart", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-cart", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-cart", "kind": "chain" },
+
+    { "from": "rt-address", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-auth", "to": "ctl-address", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-address", "kind": "chain" },
+
+    { "from": "rt-payment", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-auth", "to": "ctl-payment", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-payment", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-payment", "kind": "chain" },
+
+    { "from": "rt-order", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-auth", "to": "ctl-order", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-order", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-order", "kind": "chain" },
+
+    { "from": "rt-wishlist", "to": "mw-auth", "kind": "chain" },
+    { "from": "mw-auth", "to": "ctl-wishlist", "kind": "chain" },
+    { "from": "mw-isadmin", "to": "ctl-wishlist", "kind": "chain" },
+    { "from": "mw-validate", "to": "ctl-wishlist", "kind": "chain" },
+
+    { "from": "ctl-auth", "to": "mdl-user", "kind": "query" },
+    { "from": "ctl-user", "to": "mdl-user", "kind": "query" },
+    { "from": "ctl-product", "to": "mdl-product", "kind": "query" },
+    { "from": "ctl-category", "to": "mdl-category", "kind": "query" },
+    { "from": "ctl-category", "to": "mdl-product", "kind": "query" },
+    { "from": "ctl-cart", "to": "mdl-cart", "kind": "query" },
+    { "from": "ctl-cart", "to": "mdl-product", "kind": "query" },
+    { "from": "ctl-address", "to": "mdl-address", "kind": "query" },
+    { "from": "ctl-payment", "to": "mdl-payment", "kind": "query" },
+    { "from": "ctl-order", "to": "mdl-order", "kind": "query" },
+    { "from": "ctl-order", "to": "mdl-product", "kind": "query" },
+    { "from": "ctl-order", "to": "mdl-address", "kind": "query" },
+    { "from": "ctl-order", "to": "mdl-payment", "kind": "query" },
+    { "from": "ctl-wishlist", "to": "mdl-wishlist", "kind": "query" },
+    { "from": "ctl-wishlist", "to": "mdl-product", "kind": "query" },
+
+    { "from": "mdl-user", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-auth", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-user", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-product", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-category", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-cart", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-address", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-payment", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-order", "to": "mw-errorhandler", "kind": "global" },
+    { "from": "ctl-wishlist", "to": "mw-errorhandler", "kind": "global" },
+
+    { "from": "mdl-user", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-product", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-category", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-cart", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-order", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-address", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-payment", "to": "db-mongo", "kind": "persist" },
+    { "from": "mdl-wishlist", "to": "db-mongo", "kind": "persist" },
+
+    { "from": "mdl-user", "to": "mdl-address", "kind": "ref" },
+    { "from": "mdl-user", "to": "mdl-payment", "kind": "ref" },
+    { "from": "mdl-user", "to": "mdl-cart", "kind": "ref" },
+    { "from": "mdl-user", "to": "mdl-wishlist", "kind": "ref" },
+    { "from": "mdl-user", "to": "mdl-order", "kind": "ref" },
+    { "from": "mdl-order", "to": "mdl-address", "kind": "ref" },
+    { "from": "mdl-order", "to": "mdl-payment", "kind": "ref" },
+    { "from": "mdl-order", "to": "mdl-product", "kind": "ref" },
+    { "from": "mdl-cart", "to": "mdl-product", "kind": "ref" },
+    { "from": "mdl-wishlist", "to": "mdl-product", "kind": "ref" },
+    { "from": "mdl-product", "to": "mdl-category", "kind": "ref" }
+  ],
+  "flows": [
+    {
+      "id": "registro-usuario",
+      "name": "Registro de usuario",
+      "actor": "Invitado",
+      "description": "Alta de cuenta nueva (role=customer por defecto) y redirección a login con email prellenado.",
+      "steps": ["pg-register", "cmp-registerform", "svc-auth", "svc-apiclient", "rt-auth", "mw-validate", "ctl-auth", "mdl-user", "db-mongo"]
+    },
+    {
+      "id": "login-autenticacion",
+      "name": "Login y autenticación (JWT)",
+      "actor": "Invitado",
+      "description": "Emisión de JWT (1h) + refresh token (7d), guardado en localStorage, hidratación del perfil (avatar/email) y desbloqueo de rutas protegidas.",
+      "steps": ["pg-login", "cmp-loginform", "ctx-auth", "svc-auth", "svc-apiclient", "rt-auth", "mw-validate", "ctl-auth", "mdl-user", "db-mongo", "svc-user", "rt-user", "mw-auth", "ctl-user", "pg-protectedroute"]
+    },
+    {
+      "id": "navegar-home",
+      "name": "Navegación en Home (listado de productos)",
+      "actor": "Invitado",
+      "description": "Carga de productos destacados en la portada (stock > 0, paginado, caché 60s).",
+      "steps": ["pg-home", "svc-products", "svc-cache", "svc-apiclient", "rt-product", "ctl-product", "mdl-product", "db-mongo", "cmp-productcard"]
+    },
+    {
+      "id": "navegar-categoria",
+      "name": "Navegación por categoría",
+      "actor": "Invitado",
+      "description": "Explorar productos de una categoría, incluyendo productos de sus subcategorías si es categoría raíz.",
+      "steps": ["cmp-nav", "pg-category", "cmp-categoryproducts", "svc-category", "svc-cache", "svc-apiclient", "rt-category", "ctl-category", "mdl-category", "mdl-product", "db-mongo", "cmp-productcard"]
+    },
+    {
+      "id": "detalle-producto",
+      "name": "Ver detalle de producto",
+      "actor": "Invitado",
+      "description": "Vista de detalle con selección de talla; base para agregar al carrito o a la wishlist.",
+      "steps": ["cmp-productcard", "pg-product", "cmp-productdetails", "svc-products", "svc-cache", "svc-apiclient", "rt-product", "ctl-product", "mdl-product", "db-mongo"]
+    },
+    {
+      "id": "busqueda-productos",
+      "name": "Búsqueda de productos",
+      "actor": "Invitado",
+      "description": "Búsqueda por texto (regex nombre/descripción) con filtros de categoría/precio/stock y orden.",
+      "steps": ["cmp-header", "pg-search", "cmp-searchresultslist", "svc-products", "svc-apiclient", "rt-product", "ctl-product", "mdl-product", "db-mongo"]
+    },
+    {
+      "id": "agregar-carrito",
+      "name": "Agregar producto al carrito",
+      "actor": "Cliente",
+      "description": "Alta/merge de ítem en el carrito local (localStorage) y sincronización con el carrito del servidor (valida stock por talla).",
+      "steps": ["cmp-productcard", "ctx-cart", "svc-cart", "svc-apiclient", "rt-cart", "mw-auth", "ctl-cart", "mdl-product", "mdl-cart", "db-mongo", "cmp-header"]
+    },
+    {
+      "id": "actualizar-carrito",
+      "name": "Actualizar/eliminar ítem del carrito",
+      "actor": "Cliente",
+      "description": "Cambio de cantidad o eliminación de ítem; reemplazo completo del Cart en el servidor con re-validación de stock.",
+      "steps": ["cmp-cartview", "ctx-cart", "svc-cart", "svc-apiclient", "rt-cart", "mw-auth", "ctl-cart", "mdl-cart", "db-mongo"]
+    },
+    {
+      "id": "wishlist-agregar-quitar",
+      "name": "Agregar/quitar de la wishlist",
+      "actor": "Cliente",
+      "description": "Guardar o remover un producto de la lista de deseos del usuario.",
+      "steps": ["cmp-productdetails", "svc-wishlist", "svc-apiclient", "rt-wishlist", "mw-auth", "ctl-wishlist", "mdl-wishlist", "mdl-product", "db-mongo", "pg-wishlist"]
+    },
+    {
+      "id": "checkout-direccion-pago",
+      "name": "Checkout: dirección y método de pago",
+      "actor": "Cliente",
+      "description": "Alta de dirección de envío y método de pago dentro del flujo de checkout (o selección de los ya existentes por defecto).",
+      "steps": ["pg-cart", "pg-checkout", "cmp-addressform", "svc-shipping", "svc-apiclient", "rt-address", "mw-auth", "ctl-address", "mdl-address", "db-mongo", "cmp-paymentform", "svc-payment", "rt-payment", "ctl-payment", "mdl-payment"]
+    },
+    {
+      "id": "checkout-confirmar-pedido",
+      "name": "Checkout: confirmar pedido (cobro + creación de orden)",
+      "actor": "Cliente",
+      "description": "Cobro simulado (tarjeta terminada en 0000 = rechazada), recálculo server-side de precios/impuestos, reserva atómica de stock, creación de la orden, marcado como pagada y limpieza del carrito.",
+      "steps": ["cmp-summarysection", "svc-payment", "svc-apiclient", "rt-payment", "mw-auth", "ctl-payment", "mdl-payment", "svc-order", "rt-order", "mw-validate", "ctl-order", "mdl-order", "mdl-product", "db-mongo", "ctx-cart", "pg-orderconf"]
+    },
+    {
+      "id": "historial-pedidos",
+      "name": "Historial de pedidos (cliente)",
+      "actor": "Cliente",
+      "description": "Listado de pedidos propios (owner-or-admin), poblado con productos/dirección/método de pago.",
+      "steps": ["pg-orders", "svc-order", "svc-apiclient", "rt-order", "mw-auth", "ctl-order", "mdl-order", "db-mongo"]
+    },
+    {
+      "id": "admin-gestion-productos",
+      "name": "Admin: gestión de productos (crear/editar + imagen)",
+      "actor": "Admin",
+      "description": "Alta/edición de producto con subida de imagen (multer) y recomputo de stock a partir de tallas.",
+      "steps": ["pg-adminproducts", "cmp-productform", "svc-products", "svc-apiclient", "rt-product", "mw-auth", "mw-isadmin", "mw-uploadproduct", "ctl-product", "mdl-product", "db-mongo"]
+    },
+    {
+      "id": "admin-gestion-pedidos",
+      "name": "Admin: gestión de pedidos",
+      "actor": "Admin",
+      "description": "Filtro por estado, cambio de estado (pending/delivered) y borrado (solo pedidos delivered).",
+      "steps": ["pg-adminorders", "svc-order", "svc-apiclient", "rt-order", "mw-auth", "mw-isadmin", "ctl-order", "mdl-order", "db-mongo"]
+    },
+    {
+      "id": "admin-listado-usuarios",
+      "name": "Admin: listado de usuarios",
+      "actor": "Admin",
+      "description": "Listado de usuarios (se excluyen contraseñas y correos de prueba).",
+      "steps": ["pg-adminusers", "svc-user", "svc-apiclient", "rt-user", "mw-auth", "mw-isadmin", "ctl-user", "mdl-user", "db-mongo"]
+    },
+    {
+      "id": "perfil-editar-avatar",
+      "name": "Perfil: editar datos y subir avatar",
+      "actor": "Cliente",
+      "description": "Edición de nombre/email (propietario) y subida de avatar (multer), con borrado del avatar anterior.",
+      "steps": ["pg-profile", "cmp-profilecard", "pg-editprofile", "svc-user", "svc-apiclient", "rt-user", "mw-auth", "mw-uploadavatar", "ctl-user", "mdl-user", "db-mongo", "ctx-auth"]
+    },
+    {
+      "id": "perfil-cambiar-password",
+      "name": "Perfil: cambiar contraseña",
+      "actor": "Cliente",
+      "description": "Verificación de contraseña actual (bcrypt.compare) y hash de la nueva (solo el propietario, sin excepción de admin).",
+      "steps": ["cmp-profilecard", "pg-changepwd", "svc-user", "svc-apiclient", "rt-user", "mw-auth", "mw-validate", "ctl-user", "mdl-user", "db-mongo"]
+    },
+    {
+      "id": "cambiar-tema",
+      "name": "Cambiar tema claro/oscuro",
+      "actor": "Invitado",
+      "description": "Toggle de tema persistido en localStorage, aplicado vía atributo data-theme en <html>.",
+      "steps": ["cmp-header", "ctx-theme"]
+    }
+  ]
+};
+
+/* =========================================================================
+   CONFIG VISUAL
+   ========================================================================= */
+const TYPE_COLOR = {
+  page:       "#4263EB",
+  component:  "#7048E8",
+  context:    "#AE3EC9",
+  service:    "#D6336C",
+  route:      "#F76707",
+  middleware: "#F59F00",
+  controller: "#E8590C",
+  model:      "#2F9E44",
+  database:   "#087F5B",
+};
+const TYPE_LABEL = {
+  page:"Página", component:"Componente", context:"Contexto", service:"Servicio",
+  route:"Ruta Express", middleware:"Middleware", controller:"Controlador", model:"Modelo", database:"Base de datos"
+};
+const LAYER_ORDER = [1,2,3,4,5,6,7,8,9];
+
+const EDGE_CATEGORY = {
+  render:"frontend", compose:"frontend", nav:"frontend", use:"frontend",
+  http:"network",
+  chain:"backend",
+  query:"data", persist:"data", ref:"data",
+  global:"global"
+};
+const CATEGORY_COLOR = {
+  frontend:"#5c7cfa",
+  network:"#f59f00",
+  backend:"#e8590c",
+  data:"#2f9e44",
+  global:"#868e96"
+};
+const CATEGORY_LABEL = {
+  frontend:"UI / estado (render, use, nav, compose)",
+  network:"Red — HTTP (apiClient → ruta)",
+  backend:"Cadena de manejo (ruta → middleware → controlador)",
+  data:"Datos (consulta, persistencia, referencia)",
+  global:"Transversal (logger / errorHandler)"
+};
+
+/* =========================================================================
+   LAYOUT: columnas por capa, filas centradas por columna
+   ========================================================================= */
+const NODE_W = 176, NODE_H = 46;
+const COL_GAP = 250, MARGIN_X = 90, MARGIN_Y = 60, ROW_GAP = 60;
+
+const byLayer = {};
+LAYER_ORDER.forEach(l => byLayer[l] = GRAPH.nodes.filter(n => n.layer === l));
+const maxCount = Math.max(...LAYER_ORDER.map(l => byLayer[l].length));
+const canvasH = MARGIN_Y*2 + (maxCount-1)*ROW_GAP + NODE_H;
+const canvasW = MARGIN_X*2 + (LAYER_ORDER.length-1)*COL_GAP + NODE_W;
+
+const nodePos = {};
+LAYER_ORDER.forEach((layer, colIdx) => {
+  const list = byLayer[layer];
+  const colH = (list.length-1)*ROW_GAP + NODE_H;
+  const startY = (canvasH - colH)/2;
+  list.forEach((n, i) => {
+    nodePos[n.id] = {
+      x: MARGIN_X + colIdx*COL_GAP,
+      y: startY + i*ROW_GAP,
+      cx: MARGIN_X + colIdx*COL_GAP + NODE_W/2,
+      cy: startY + i*ROW_GAP + NODE_H/2,
+      layer
+    };
+  });
+});
+const nodeById = Object.fromEntries(GRAPH.nodes.map(n => [n.id, n]));
+
+/* adjacency (for inspector) */
+const outgoing = {}, incoming = {};
+GRAPH.nodes.forEach(n => { outgoing[n.id]=[]; incoming[n.id]=[]; });
+GRAPH.edges.forEach(e => { outgoing[e.from].push(e); incoming[e.to].push(e); });
+
+/* =========================================================================
+   SVG BUILD
+   ========================================================================= */
+const svg = document.getElementById("graph");
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs){
+  const n = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+
+const defs = el("defs", {});
+Object.entries(CATEGORY_COLOR).forEach(([cat, color]) => {
+  const marker = el("marker", {
+    id:`arrow-${cat}`, viewBox:"0 0 10 10", refX:"8.5", refY:"5",
+    markerWidth:"7", markerHeight:"7", orient:"auto-start-reverse"
+  });
+  marker.appendChild(el("path", { d:"M0,0 L10,5 L0,10 z", fill:color }));
+  defs.appendChild(marker);
+  const markerHi = el("marker", {
+    id:`arrow-hi-${cat}`, viewBox:"0 0 10 10", refX:"8.5", refY:"5",
+    markerWidth:"7.5", markerHeight:"7.5", orient:"auto-start-reverse"
+  });
+  markerHi.appendChild(el("path", { d:"M0,0 L10,5 L0,10 z", fill:"#ffffff" }));
+  defs.appendChild(markerHi);
+});
+svg.appendChild(defs);
+
+const viewport = el("g", { id:"viewport" });
+svg.appendChild(viewport);
+
+const layerLabelsG = el("g", { class:"layers" });
+const edgesG = el("g", { class:"edges" });
+const nodesG = el("g", { class:"nodes" });
+viewport.appendChild(layerLabelsG);
+viewport.appendChild(edgesG);
+viewport.appendChild(nodesG);
+
+/* layer column labels */
+GRAPH.meta.layers.forEach((L, colIdx) => {
+  const x = MARGIN_X + colIdx*COL_GAP + NODE_W/2;
+  const t = el("text", { class:"layer-label", x, y: 26, "text-anchor":"middle" });
+  t.textContent = L.name;
+  layerLabelsG.appendChild(t);
+});
+
+/* edge path generator (cubic bezier), handles forward/backward/same-column */
+function edgePath(a, b){
+  const p1 = nodePos[a], p2 = nodePos[b];
+  const forward = p2.x >= p1.x;
+  const sx = forward ? p1.x + NODE_W : p1.x;
+  const sy = p1.cy;
+  const tx = forward ? p2.x : p2.x + NODE_W;
+  const ty = p2.cy;
+  const dx = Math.max(Math.abs(tx-sx)*0.5, 40);
+  let c1x, c1y, c2x, c2y;
+  if (Math.abs(p1.x - p2.x) < 1){
+    /* same column: arc sideways */
+    const bulge = 70;
+    c1x = sx + (forward? bulge : -bulge); c1y = sy;
+    c2x = tx + (forward? bulge : -bulge); c2y = ty;
+  } else {
+    c1x = sx + (forward? dx : -dx); c1y = sy;
+    c2x = tx + (forward? -dx : dx); c2y = ty;
+  }
+  return `M ${sx},${sy} C ${c1x},${c1y} ${c2x},${c2y} ${tx},${ty}`;
+}
+
+/* draw edges */
+const edgeEls = GRAPH.edges.map((e, i) => {
+  const cat = EDGE_CATEGORY[e.kind] || "frontend";
+  const path = el("path", {
+    class:`edge cat-${cat}`, d: edgePath(e.from, e.to),
+    stroke: CATEGORY_COLOR[cat], "stroke-width":"1.4", opacity:"0.55",
+    "marker-end": `url(#arrow-${cat})`
+  });
+  path.dataset.from = e.from; path.dataset.to = e.to; path.dataset.kind = e.kind; path.dataset.cat = cat;
+  edgesG.appendChild(path);
+  return path;
+});
+
+/* draw nodes */
+const nodeEls = {};
+GRAPH.nodes.forEach(n => {
+  const p = nodePos[n.id];
+  const g = el("g", { class:`node type-${n.type}`, transform:`translate(${p.x},${p.y})` });
+  g.dataset.id = n.id; g.dataset.layer = n.layer; g.dataset.type = n.type;
+  const rect = el("rect", {
+    width:NODE_W, height:NODE_H, rx:9, ry:9,
+    fill:TYPE_COLOR[n.type], stroke:"rgba(0,0,0,.25)"
+  });
+  g.appendChild(rect);
+  const label = el("text", { x:NODE_W/2, y: n.desc ? 20 : 27, "text-anchor":"middle" });
+  label.textContent = n.label.length > 24 ? n.label.slice(0,23)+"…" : n.label;
+  g.appendChild(label);
+  const sub = el("text", { class:"sub", x:NODE_W/2, y:33, "text-anchor":"middle" });
+  sub.textContent = TYPE_LABEL[n.type];
+  g.appendChild(sub);
+  const badgeCircle = el("circle", { class:"badge-circle", cx: NODE_W-11, cy:11, r:10, style:"display:none" });
+  const badgeText = el("text", { class:"badge", x:NODE_W-11, y:14.5, "text-anchor":"middle", style:"display:none" });
+  g.appendChild(badgeCircle); g.appendChild(badgeText);
+  g._badgeCircle = badgeCircle; g._badgeText = badgeText;
+
+  nodesG.appendChild(g);
+  nodeEls[n.id] = g;
+});
+
+/* =========================================================================
+   PAN / ZOOM (viewBox based)
+   ========================================================================= */
+let vb = { x: -20, y: 0, w: canvasW+40, h: canvasH };
+function applyVB(){ svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
+applyVB();
+
+function fitToScreen(){
+  const rect = svg.getBoundingClientRect();
+  const pad = 30;
+  const scale = Math.min(rect.width/(canvasW+pad*2), rect.height/(canvasH+pad*2));
+  const w = rect.width/scale, h = rect.height/scale;
+  vb = { x: -pad - (w-(canvasW+pad*2))/2, y: -pad - (h-(canvasH+pad*2))/2, w, h };
+  applyVB();
+}
+setTimeout(fitToScreen, 0);
+window.addEventListener("resize", fitToScreen);
+
+function clientToSVG(evt){
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+let isPanning = false, panStart = null, vbStart = null;
+svg.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
+  isPanning = true; svg.classList.add("dragging");
+  panStart = { x:e.clientX, y:e.clientY }; vbStart = { ...vb };
+});
+window.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
+  const rect = svg.getBoundingClientRect();
+  const scale = vb.w / rect.width;
+  vb.x = vbStart.x - (e.clientX - panStart.x)*scale;
+  vb.y = vbStart.y - (e.clientY - panStart.y)*scale;
+  applyVB();
+});
+window.addEventListener("mouseup", () => { isPanning=false; svg.classList.remove("dragging"); });
+
+svg.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const pt = clientToSVG(e);
+  const factor = e.deltaY > 0 ? 1.12 : 0.89;
+  const nw = Math.min(Math.max(vb.w*factor, 260), canvasW*3);
+  const nh = nw * (vb.h/vb.w);
+  vb.x = pt.x - (pt.x - vb.x) * (nw/vb.w);
+  vb.y = pt.y - (pt.y - vb.y) * (nh/vb.h);
+  vb.w = nw; vb.h = nh;
+  applyVB();
+}, { passive:false });
+
+function zoomBy(factor){
+  const cx = vb.x + vb.w/2, cy = vb.y + vb.h/2;
+  const nw = Math.min(Math.max(vb.w*factor, 260), canvasW*3);
+  const nh = nw * (vb.h/vb.w);
+  vb = { x: cx - nw/2, y: cy - nh/2, w: nw, h: nh };
+  applyVB();
+}
+document.getElementById("zoomIn").onclick = () => zoomBy(0.8);
+document.getElementById("zoomOut").onclick = () => zoomBy(1.25);
+document.getElementById("zoomFit").onclick = fitToScreen;
+
+function panToNode(id){
+  const p = nodePos[id];
+  if (!p) return;
+  const nw = Math.min(vb.w, 900), nh = nw*(vb.h/vb.w);
+  vb = { x: p.cx - nw/2, y: p.cy - nh/2, w:nw, h:nh };
+  applyVB();
+}
+
+/* =========================================================================
+   TOOLTIP
+   ========================================================================= */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const tooltip = document.getElementById("tooltip");
+function showTooltip(evt, node){
+  const rel = outgoing[node.id].length + incoming[node.id].length;
+  tooltip.innerHTML = `
+    <div class="t-title">${escapeHtml(node.label)}
+      <span class="t-type" style="background:${TYPE_COLOR[node.type]}">${TYPE_LABEL[node.type]}</span>
+    </div>
+    <div class="t-desc">${escapeHtml(node.desc)}</div>
+    <div class="t-meta">${rel} relación(es) directas · click para inspeccionar</div>
+  `;
+  positionTooltip(evt);
+  tooltip.classList.add("show");
+}
+function positionTooltip(evt){
+  const pad = 16;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  if (x + 300 > window.innerWidth) x = evt.clientX - 300 - pad;
+  if (y + 140 > window.innerHeight) y = evt.clientY - 140 - pad;
+  tooltip.style.left = x+"px"; tooltip.style.top = y+"px";
+}
+function hideTooltip(){ tooltip.classList.remove("show"); }
+
+/* =========================================================================
+   SELECTION / HIGHLIGHT STATE
+   ========================================================================= */
+let activeFlow = null;   // flow object or null
+let activeNode = null;   // node id or null
+let hiddenLayers = new Set(); // layer ids toggled off
+let searchTerm = "";
+
+function clearBadges(){
+  Object.values(nodeEls).forEach(g => {
+    g._badgeCircle.style.display = "none";
+    g._badgeText.style.display = "none";
+    g._badgeText.textContent = "";
+  });
+}
+
+function render(){
+  const flowNodeSet = activeFlow ? new Set(activeFlow.steps) : null;
+  const flowEdgeSet = new Set();
+  if (activeFlow){
+    for (let i=0;i<activeFlow.steps.length-1;i++){
+      flowEdgeSet.add(activeFlow.steps[i]+"->"+activeFlow.steps[i+1]);
+    }
+  }
+  const neighborSet = activeNode ? new Set([
+    activeNode,
+    ...outgoing[activeNode].map(e=>e.to),
+    ...incoming[activeNode].map(e=>e.from)
+  ]) : null;
+
+  const term = searchTerm.trim().toLowerCase();
+
+  clearBadges();
+
+  /* nodes */
+  GRAPH.nodes.forEach(n => {
+    const g = nodeEls[n.id];
+    g.classList.toggle("hidden-layer", hiddenLayers.has(n.layer));
+    let dim = false;
+    if (flowNodeSet) dim = !flowNodeSet.has(n.id);
+    else if (neighborSet) dim = !neighborSet.has(n.id);
+    else if (term) dim = !(n.label.toLowerCase().includes(term) || n.id.includes(term) || n.desc.toLowerCase().includes(term));
+    g.classList.toggle("dim", dim);
+    g.classList.toggle("selected", n.id === activeNode);
+  });
+
+  if (activeFlow){
+    activeFlow.steps.forEach((id, idx) => {
+      const g = nodeEls[id];
+      g._badgeCircle.style.display = "block";
+      g._badgeText.style.display = "block";
+      g._badgeText.textContent = idx+1;
+    });
+  }
+
+  /* edges */
+  edgeEls.forEach(pEl => {
+    const from = pEl.dataset.from, to = pEl.dataset.to;
+    const hiddenByLayer = hiddenLayers.has(nodeById[from].layer) || hiddenLayers.has(nodeById[to].layer);
+    pEl.classList.toggle("hidden-layer", hiddenByLayer);
+    const inFlow = flowEdgeSet.has(from+"->"+to);
+    pEl.classList.toggle("flow-edge", inFlow);
+    let dim = false;
+    if (activeFlow) dim = !inFlow;
+    else if (neighborSet) dim = !(neighborSet.has(from) && neighborSet.has(to));
+    pEl.classList.toggle("dim", dim);
+    if (inFlow){
+      pEl.setAttribute("stroke", "#ffffff");
+      pEl.setAttribute("marker-end", `url(#arrow-hi-${pEl.dataset.cat})`);
+      pEl.setAttribute("opacity", "0.95");
+    } else {
+      pEl.setAttribute("stroke", CATEGORY_COLOR[pEl.dataset.cat]);
+      pEl.setAttribute("marker-end", `url(#arrow-${pEl.dataset.cat})`);
+      pEl.setAttribute("opacity", activeFlow ? "0.06" : "0.55");
+    }
+  });
+}
+
+/* node interactions */
+GRAPH.nodes.forEach(n => {
+  const g = nodeEls[n.id];
+  g.addEventListener("mouseenter", (e) => { g.classList.add("hover"); showTooltip(e, n); });
+  g.addEventListener("mousemove", positionTooltip);
+  g.addEventListener("mouseleave", () => { g.classList.remove("hover"); hideTooltip(); });
+  g.addEventListener("click", (e) => {
+    e.stopPropagation();
+    selectNode(n.id);
+  });
+});
+svg.addEventListener("click", () => { /* click empty canvas: keep flow, clear node focus */ });
+
+/* =========================================================================
+   INSPECTOR TAB
+   ========================================================================= */
+function selectNode(id){
+  activeNode = (activeNode === id) ? null : id;
+  renderInspector();
+  render();
+  if (activeNode){ switchTab("info"); }
+}
+function renderInspector(){
+  const box = document.getElementById("tab-info");
+  if (!activeNode){
+    box.innerHTML = `<div class="node-info"><div class="ni-empty">Hacé click en cualquier nodo del diagrama para ver sus relaciones directas acá.</div></div>`;
+    return;
+  }
+  const n = nodeById[activeNode];
+  const outs = outgoing[activeNode];
+  const ins = incoming[activeNode];
+  const relItem = (id, dir) => {
+    const t = nodeById[id];
+    return `<div class="ni-rel-item" data-goto="${id}">
+      <span class="dot" style="background:${TYPE_COLOR[t.type]}"></span>
+      <span>${dir==='out' ? '→' : '←'} ${escapeHtml(t.label)}</span>
+    </div>`;
+  };
+  box.innerHTML = `
+    <div class="node-info">
+      <div class="ni-title">
+        <span class="t-type" style="background:${TYPE_COLOR[n.type]}; padding:2px 7px; border-radius:5px; font-size:10px; margin-right:6px;">${TYPE_LABEL[n.type]}</span>
+        ${escapeHtml(n.label)}
+      </div>
+      <div class="ni-desc">${escapeHtml(n.desc)}</div>
+      ${outs.length ? `<div class="ni-rel"><div class="ni-rel-title">Depende de / llama a (${outs.length})</div>${outs.map(e=>relItem(e.to,'out')).join("")}</div>` : ""}
+      ${ins.length ? `<div class="ni-rel"><div class="ni-rel-title">Usado por (${ins.length})</div>${ins.map(e=>relItem(e.from,'in')).join("")}</div>` : ""}
+    </div>
+  `;
+  box.querySelectorAll(".ni-rel-item").forEach(elx => {
+    elx.addEventListener("click", () => { selectNode(elx.dataset.goto); panToNode(elx.dataset.goto); });
+  });
+}
+
+/* =========================================================================
+   FLOWS TAB
+   ========================================================================= */
+function renderFlows(){
+  const box = document.getElementById("tab-flows");
+  const groups = {};
+  GRAPH.flows.forEach(f => { (groups[f.actor] = groups[f.actor] || []).push(f); });
+  const order = ["Invitado","Cliente","Admin"];
+  let html = "";
+  order.filter(a => groups[a]).forEach(actor => {
+    html += `<div class="flow-actor-group"><div class="flow-actor-title">${actor}</div>`;
+    groups[actor].forEach(f => {
+      html += `
+      <div class="flow-card" data-flow="${f.id}">
+        <div class="fname">${escapeHtml(f.name)}</div>
+        <div class="fdesc">${escapeHtml(f.description)}</div>
+        <div class="flow-steps">
+          ${f.steps.map((sid,i) => {
+            const t = nodeById[sid];
+            return `<div class="flow-step" data-goto="${sid}">
+              <span class="snum">${i+1}</span>
+              <span class="stype" style="background:${TYPE_COLOR[t.type]}"></span>
+              <span>${escapeHtml(t.label)}</span>
+            </div>`;
+          }).join("")}
+          <button class="flow-clear">✕ Quitar resaltado</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  box.innerHTML = html;
+
+  box.querySelectorAll(".flow-card").forEach(card => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".flow-step") || e.target.closest(".flow-clear")) return;
+      const fid = card.dataset.flow;
+      selectFlow(activeFlow && activeFlow.id === fid ? null : fid);
+    });
+  });
+  box.querySelectorAll(".flow-step").forEach(step => {
+    step.addEventListener("click", (e) => {
+      e.stopPropagation();
+      panToNode(step.dataset.goto);
+      activeNode = step.dataset.goto;
+      renderInspector();
+      render();
+    });
+  });
+  box.querySelectorAll(".flow-clear").forEach(btn => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); selectFlow(null); });
+  });
+}
+function selectFlow(id){
+  activeFlow = id ? GRAPH.flows.find(f => f.id === id) : null;
+  document.querySelectorAll(".flow-card").forEach(c => c.classList.toggle("active", c.dataset.flow === id));
+  document.getElementById("stat-selection").textContent = activeFlow
+    ? `Flujo: ${activeFlow.name} — ${activeFlow.steps.length} pasos`
+    : "Seleccioná un flujo o pasá el mouse sobre un nodo para ver detalles";
+  render();
+  if (activeFlow){
+    const xs = activeFlow.steps.map(s => nodePos[s].cx);
+    const ys = activeFlow.steps.map(s => nodePos[s].cy);
+    const minX = Math.min(...xs)-140, maxX = Math.max(...xs)+140;
+    const minY = Math.min(...ys)-100, maxY = Math.max(...ys)+100;
+    const rect = svg.getBoundingClientRect();
+    const scale = Math.min(rect.width/(maxX-minX), rect.height/(maxY-minY));
+    const w = rect.width/scale, h = rect.height/scale;
+    const cx = (minX+maxX)/2, cy=(minY+maxY)/2;
+    vb = { x: cx-w/2, y: cy-h/2, w, h };
+    applyVB();
+  }
+}
+
+/* =========================================================================
+   LEGEND / LAYER FILTER TAB
+   ========================================================================= */
+function renderLegend(){
+  const box = document.getElementById("tab-legend");
+  const typeCounts = {};
+  GRAPH.nodes.forEach(n => typeCounts[n.type] = (typeCounts[n.type]||0)+1);
+
+  let html = `<div class="legend-section"><div class="legend-title">Capas (click para mostrar/ocultar)</div>`;
+  GRAPH.meta.layers.forEach(L => {
+    const type = GRAPH.nodes.find(n => n.layer === L.id).type;
+    html += `<div class="legend-row" data-layer="${L.id}">
+      <span class="legend-swatch" style="background:${TYPE_COLOR[type]}"></span>
+      <span>${L.name}</span>
+      <span class="legend-count">${typeCounts[type]||0}</span>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="legend-section"><div class="legend-title">Tipos de relación</div>`;
+  Object.entries(CATEGORY_LABEL).forEach(([cat, label]) => {
+    html += `<div class="legend-row" data-cat="${cat}">
+      <span class="legend-line" style="border-color:${CATEGORY_COLOR[cat]}"></span>
+      <span>${label}</span>
+    </div>`;
+  });
+  html += `</div>`;
+
+  box.innerHTML = html;
+  box.querySelectorAll(".legend-row[data-layer]").forEach(row => {
+    row.addEventListener("click", () => {
+      const layer = Number(row.dataset.layer);
+      if (hiddenLayers.has(layer)) hiddenLayers.delete(layer); else hiddenLayers.add(layer);
+      row.classList.toggle("off", hiddenLayers.has(layer));
+      render();
+    });
+  });
+}
+
+/* =========================================================================
+   TABS
+   ========================================================================= */
+function switchTab(name){
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab===name));
+  ["flows","legend","info"].forEach(t => {
+    document.getElementById("tab-"+t).style.display = (t===name) ? "block" : "none";
+  });
+}
+document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+/* mobile panel toggle */
+const panelEl = document.getElementById("panel");
+const scrim = document.getElementById("scrim");
+document.getElementById("flowsToggle").addEventListener("click", () => {
+  panelEl.classList.add("open"); scrim.classList.add("show");
+});
+scrim.addEventListener("click", () => { panelEl.classList.remove("open"); scrim.classList.remove("show"); });
+
+/* search */
+const searchInput = document.getElementById("search");
+searchInput.addEventListener("input", () => {
+  searchTerm = searchInput.value;
+  render();
+  if (searchTerm.trim()){
+    const term = searchTerm.trim().toLowerCase();
+    const match = GRAPH.nodes.find(n => n.label.toLowerCase().includes(term));
+    if (match) panToNode(match.id);
+  }
+});
+
+/* escape clears everything */
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape"){
+    selectFlow(null); activeNode = null; searchInput.value=""; searchTerm="";
+    renderInspector(); render();
+  }
+});
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+document.getElementById("stat-nodes").textContent = GRAPH.nodes.length;
+document.getElementById("stat-edges").textContent = GRAPH.edges.length;
+document.getElementById("stat-flows").textContent = GRAPH.flows.length;
+renderFlows();
+renderLegend();
+renderInspector();
+render();
+</script>
+</body>
+</html>

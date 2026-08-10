@@ -14,12 +14,14 @@ import { createOrder, updateOrderStatus } from "../services/orderService";
 import {
   chargePaymentMethod,
   createPaymentMethod,
+  deletePaymentMethod,
   getDefaultPaymentMethod,
   getPaymentMethods,
   updatePaymentMethod,
 } from "../services/paymentService";
 import {
   createAddress,
+  deleteAddress,
   getDefaultShippingAddress,
   getShippingAddresses,
   updateAddress,
@@ -186,10 +188,22 @@ export default function Checkout() {
   };
 
   /**
-   * Elimina una dirección de la lista local.
+   * Elimina una dirección: primero la borra en el backend (DELETE
+   * /api/addresses/:id) y solo si eso funciona la quita de la lista local.
    * Si la dirección eliminada estaba seleccionada, intenta seleccionar otra.
    */
-  const handleAddressDelete = (address) => {
+  const handleAddressDelete = async (address) => {
+    setAddressSubmitError(null);
+
+    try {
+      await deleteAddress(address._id);
+    } catch (err) {
+      setAddressSubmitError(
+        "No se pudo eliminar la dirección. Intenta de nuevo."
+      );
+      return;
+    }
+
     const updatedAddresses = addresses.filter((add) => add._id !== address._id);
     // Si borramos la seleccionada, seleccionamos la primera disponible o null
     if (selectedAddress?._id === address._id) {
@@ -318,11 +332,23 @@ export default function Checkout() {
   };
 
   /**
-   * Elimina un método de pago de la lista local.
-   * Si el pago eliminado estaba seleccionado, intenta seleccionar otro.
+   * Elimina un método de pago: primero lo borra en el backend (DELETE
+   * /api/payment-methods/:id) y solo si eso funciona lo quita de la lista
+   * local. Si el pago eliminado estaba seleccionado, intenta seleccionar otro.
    * @param {Object} payment - El método de pago a eliminar.
    */
-  const handlePaymentDelete = (payment) => {
+  const handlePaymentDelete = async (payment) => {
+    setPaymentSubmitError(null);
+
+    try {
+      await deletePaymentMethod(payment._id);
+    } catch (err) {
+      setPaymentSubmitError(
+        "No se pudo eliminar el método de pago. Intenta de nuevo."
+      );
+      return;
+    }
+
     const updatedPayments = payments.filter((pay) => pay._id !== payment._id);
     // Si borramos el seleccionado, seleccionamos el primero disponible o null
     if (selectedPayment?._id === payment._id) {

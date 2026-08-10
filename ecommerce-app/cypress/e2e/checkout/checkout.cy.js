@@ -21,20 +21,25 @@ describe("Checkout - flujo completo en 4 fases", () => {
       cy.wrap(user).as("user");
       cy.loginByApi({ email: user.email, password: user.password });
     });
-    cy.getSeededProduct().then((product) => cy.wrap(product).as("product"));
+    cy.getSeededProduct().then((product) => {
+      cy.wrap(product).as("product");
+      const size = product.sizes?.find((s) => s.stock > 0)?.size ?? null;
+      cy.wrap(size).as("size");
+      cy.wrap(size ? `${product._id}-${size}` : product._id).as("itemKey");
+    });
   });
 
   describe("Fase 1: carrito y productos", () => {
     it("agrega un producto, muestra su información y permite modificar cantidad", function () {
-      cy.addProductToCart({ productId: this.product._id, quantity: 1 });
+      cy.addProductToCart({ productId: this.product._id, size: this.size, quantity: 1 });
 
-      cy.get(`[data-testid="cart-item-${this.product._id}"]`).within(() => {
+      cy.get(`[data-testid="cart-item-${this.itemKey}"]`).within(() => {
         cy.contains(this.product.name).should("be.visible");
         cy.contains(`$${this.product.price.toFixed(2)}`).should("be.visible");
       });
 
-      cy.get(`[data-testid="cart-item-increase-${this.product._id}"]`).click();
-      cy.get(`[data-testid="cart-item-quantity-${this.product._id}"]`).should(
+      cy.get(`[data-testid="cart-item-increase-${this.itemKey}"]`).click();
+      cy.get(`[data-testid="cart-item-quantity-${this.itemKey}"]`).should(
         "have.text",
         "2",
       );
@@ -43,24 +48,24 @@ describe("Checkout - flujo completo en 4 fases", () => {
         (this.product.price * 2).toFixed(2),
       );
 
-      cy.get(`[data-testid="cart-item-decrease-${this.product._id}"]`).click();
-      cy.get(`[data-testid="cart-item-quantity-${this.product._id}"]`).should(
+      cy.get(`[data-testid="cart-item-decrease-${this.itemKey}"]`).click();
+      cy.get(`[data-testid="cart-item-quantity-${this.itemKey}"]`).should(
         "have.text",
         "1",
       );
     });
 
     it("elimina un producto del carrito", function () {
-      cy.addProductToCart({ productId: this.product._id, quantity: 1 });
+      cy.addProductToCart({ productId: this.product._id, size: this.size, quantity: 1 });
 
-      cy.get(`[data-testid="cart-item-remove-${this.product._id}"]`).click();
+      cy.get(`[data-testid="cart-item-remove-${this.itemKey}"]`).click();
 
       cy.get('[data-testid="cart-empty"]').should("be.visible");
     });
 
-    it("impide continuar al checkout con el carrito vacío", () => {
+    it("impide continuar al checkout con el carrito vacío", function () {
       cy.clearAllLocalStorage();
-      cy.loginByApi();
+      cy.loginByApi({ email: this.user.email, password: this.user.password });
       cy.visit("/cart");
       cy.get('[data-testid="cart-empty"]').should("be.visible");
       cy.visit("/checkout");
@@ -68,7 +73,7 @@ describe("Checkout - flujo completo en 4 fases", () => {
     });
 
     it("permite continuar al checkout cuando hay productos", function () {
-      cy.addProductToCart({ productId: this.product._id, quantity: 1 });
+      cy.addProductToCart({ productId: this.product._id, size: this.size, quantity: 1 });
       cy.visit("/cart");
       cy.get('[data-testid="cart-checkout-button"]')
         .should("not.be.disabled")
@@ -82,11 +87,13 @@ describe("Checkout - flujo completo en 4 fases", () => {
       const address = buildShippingAddress();
       const payment = buildPaymentMethod();
 
-      cy.addProductToCart({ productId: this.product._id, quantity: 2 });
+      cy.addProductToCart({ productId: this.product._id, size: this.size, quantity: 2 });
       cy.visit("/checkout");
 
       // --- Fase 2: dirección de envío ---
       cy.get('[data-testid="checkout-address-section"]').within(() => {
+        // Usuario nuevo sin direcciones: primero hay que abrir el formulario.
+        cy.contains("Agregar Nueva Dirección").click();
         cy.get('[data-testid="checkout-address-name-input"]').type(
           address.name,
         );
@@ -121,6 +128,8 @@ describe("Checkout - flujo completo en 4 fases", () => {
 
       // --- Fase 3: método de pago ---
       cy.get('[data-testid="checkout-payment-section"]').within(() => {
+        // Usuario nuevo sin métodos de pago: primero hay que abrir el formulario.
+        cy.contains("Agregar Nueva Tarjeta").click();
         cy.get('[data-testid="checkout-payment-alias-input"]').type(
           payment.alias,
         );
@@ -143,7 +152,7 @@ describe("Checkout - flujo completo en 4 fases", () => {
 
       // --- Fase 4: revisión y confirmación ---
       cy.get('[data-testid="checkout-review-section"]').within(() => {
-        cy.get(`[data-testid="cart-item-${this.product._id}"]`).should(
+        cy.get(`[data-testid="cart-item-${this.itemKey}"]`).should(
           "be.visible",
         );
       });
@@ -191,9 +200,11 @@ describe("Checkout - flujo completo en 4 fases", () => {
       const address = buildShippingAddress();
       const payment = buildPaymentMethod();
 
-      cy.addProductToCart({ productId: this.product._id, quantity: 1 });
+      cy.addProductToCart({ productId: this.product._id, size: this.size, quantity: 1 });
       cy.visit("/checkout");
 
+      // Usuario nuevo sin direcciones: primero hay que abrir el formulario.
+      cy.contains("Agregar Nueva Dirección").click();
       cy.get('[data-testid="checkout-address-name-input"]').type(address.name);
       cy.get('[data-testid="checkout-address-line1-input"]').type(
         address.address1,
@@ -214,6 +225,8 @@ describe("Checkout - flujo completo en 4 fases", () => {
       cy.get('[data-testid="checkout-address-submit-button"]').click();
       cy.wait("@createAddress");
 
+      // Usuario nuevo sin métodos de pago: primero hay que abrir el formulario.
+      cy.contains("Agregar Nueva Tarjeta").click();
       cy.get('[data-testid="checkout-payment-alias-input"]').type(
         payment.alias,
       );
@@ -238,6 +251,88 @@ describe("Checkout - flujo completo en 4 fases", () => {
       // POST /orders (no queda ningún efecto que reenvíe el pedido).
       cy.reload();
       cy.get("@createOrder.all").should("have.length", 1);
+    });
+
+    it("elimina una dirección y un método de pago, y no reaparecen tras recargar", function () {
+      const address = buildShippingAddress();
+      const payment = buildPaymentMethod();
+
+      cy.intercept("DELETE", "**/addresses/*").as("deleteAddress");
+      cy.intercept("DELETE", "**/payment-methods/*").as("deletePayment");
+
+      cy.addProductToCart({ productId: this.product._id, size: this.size, quantity: 1 });
+      cy.visit("/checkout");
+
+      // --- Crear dirección y método de pago (precondición) ---
+      cy.get('[data-testid="checkout-address-section"]').within(() => {
+        cy.contains("Agregar Nueva Dirección").click();
+        cy.get('[data-testid="checkout-address-name-input"]').type(address.name);
+        cy.get('[data-testid="checkout-address-line1-input"]').type(
+          address.address1,
+        );
+        cy.get('[data-testid="checkout-address-city-input"]').type(address.city);
+        cy.get('[data-testid="checkout-address-state-input"]').type(
+          address.state,
+        );
+        cy.get('[data-testid="checkout-address-postal-code-input"]').type(
+          address.postalCode,
+        );
+        cy.get('[data-testid="checkout-address-country-input"]').type(
+          address.country,
+        );
+        cy.get('[data-testid="checkout-address-phone-input"]').type(
+          address.phone,
+        );
+        cy.get('[data-testid="checkout-address-submit-button"]').click();
+      });
+      cy.wait("@createAddress");
+
+      cy.get('[data-testid="checkout-payment-section"]').within(() => {
+        cy.contains("Agregar Nueva Tarjeta").click();
+        cy.get('[data-testid="checkout-payment-alias-input"]').type(
+          payment.alias,
+        );
+        cy.get('[data-testid="checkout-payment-card-number-input"]').type(
+          payment.cardNumber,
+        );
+        cy.get('[data-testid="checkout-payment-holder-input"]').type(
+          payment.placeHolder,
+        );
+        cy.get('[data-testid="checkout-payment-expiry-input"]').type(
+          payment.expiryDate,
+        );
+        cy.get('[data-testid="checkout-payment-cvv-input"]').type(payment.cvv);
+        cy.get('[data-testid="checkout-payment-submit-button"]').click();
+      });
+      cy.wait("@createPayment");
+
+      // --- Reabrir cada sección (colapsada tras guardar) y eliminar ---
+      cy.get('[data-testid="checkout-address-section"]').within(() => {
+        cy.contains("Cambiar").click();
+        cy.contains("Eliminar").click();
+      });
+      cy.wait("@deleteAddress").its("response.statusCode").should("eq", 200);
+      cy.get('[data-testid="checkout-address-section"]').within(() => {
+        cy.contains(address.name).should("not.exist");
+      });
+
+      cy.get('[data-testid="checkout-payment-section"]').within(() => {
+        cy.contains("Cambiar").click();
+        cy.contains("Eliminar").click();
+      });
+      cy.wait("@deletePayment").its("response.statusCode").should("eq", 204);
+      cy.get('[data-testid="checkout-payment-section"]').within(() => {
+        cy.contains(payment.alias).should("not.exist");
+      });
+
+      // --- Recargar: si el borrado no persistió en el backend, reaparecerían ---
+      cy.reload();
+      cy.get('[data-testid="checkout-address-section"]').within(() => {
+        cy.contains(address.name).should("not.exist");
+      });
+      cy.get('[data-testid="checkout-payment-section"]').within(() => {
+        cy.contains(payment.alias).should("not.exist");
+      });
     });
   });
 });

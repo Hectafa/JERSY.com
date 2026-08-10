@@ -22,3 +22,6 @@ ecommerce-app/cypress.env.json
 # Uploaded user content
 ecommerce-api/public/uploads/*
 !ecommerce-api/public/uploads/.gitkeep
+
+# Snapshot temporal de stock para correr Cypress (ver scripts/e2eStockPrepare.js)
+ecommerce-api/scripts/.e2e-stock-snapshot.json

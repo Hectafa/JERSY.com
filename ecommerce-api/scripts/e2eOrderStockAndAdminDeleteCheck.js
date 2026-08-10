@@ -7,7 +7,7 @@ import Address from "../src/models/Address.js";
 import PaymentMethod from "../src/models/PaymentMethod.js";
 import Order from "../src/models/Order.js";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const API = "http://localhost:4000/api";
 const PASSWORD = "Password123!";

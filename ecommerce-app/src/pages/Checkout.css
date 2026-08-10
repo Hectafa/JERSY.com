@@ -34,7 +34,10 @@
 
 .checkout-summary {
   position: sticky;
-  top: clamp(16px, 4vw, 32px);
+  /* El header del sitio (logo/búsqueda + barra de categorías) también es
+     sticky con z-index alto; sin este espacio, la primera línea del resumen
+     queda tapada por el header al hacer scroll. */
+  top: calc(112px + clamp(16px, 4vw, 32px));
   background: var(--surface);
   padding: clamp(16px, 3vw, 24px);
   border-radius: var(--radius);

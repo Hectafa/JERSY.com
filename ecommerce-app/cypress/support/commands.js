@@ -136,7 +136,7 @@ Cypress.Commands.add("getSeededProduct", () => {
  * Uso:
  *   cy.addProductToCart({ productId, quantity: 2 });
  */
-Cypress.Commands.add("addProductToCart", ({ productId, quantity = 1 }) => {
+Cypress.Commands.add("addProductToCart", ({ productId, size, quantity = 1 }) => {
   if (!productId) {
     throw new Error("cy.addProductToCart requiere { productId }");
   }
@@ -145,6 +145,20 @@ Cypress.Commands.add("addProductToCart", ({ productId, quantity = 1 }) => {
     ({ body: product }) => {
       cy.visit(`/product/${productId}`);
       cy.get('[data-testid="product-detail"]').should("be.visible");
+
+      if (product.sizes?.length) {
+        if (!size) {
+          throw new Error(
+            `cy.addProductToCart: el producto ${productId} tiene tallas, pasa { size } (usa la misma que cy.getSeededProduct/this.size).`,
+          );
+        }
+        cy.get(`[data-testid="size-option-${size}"]`).click();
+      }
+
+      // El carrito identifica cada línea como `productId-size` cuando el
+      // producto tiene tallas (ver getItemKey en CartContext.jsx), así que
+      // los data-testid de cart-item deben incluir la talla también.
+      const itemKey = size ? `${productId}-${size}` : productId;
 
       Cypress._.times(quantity, () => {
         cy.get('[data-testid="add-to-cart-button"]').click();
@@ -156,8 +170,8 @@ Cypress.Commands.add("addProductToCart", ({ productId, quantity = 1 }) => {
       );
 
       cy.visit("/cart");
-      cy.get(`[data-testid="cart-item-${productId}"]`).should("be.visible");
-      cy.get(`[data-testid="cart-item-quantity-${productId}"]`).should(
+      cy.get(`[data-testid="cart-item-${itemKey}"]`).should("be.visible");
+      cy.get(`[data-testid="cart-item-quantity-${itemKey}"]`).should(
         "have.text",
         String(quantity),
       );

@@ -11,7 +11,9 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:coverage": "vitest run --coverage",
-    "test:load": "artillery run tests/load/eshop-load.yml"
+    "test:load": "artillery run tests/load/eshop-load.yml",
+    "e2e:stock:prepare": "node scripts/e2eStockPrepare.js",
+    "e2e:stock:restore": "node scripts/e2eStockRestore.js"
   },
   "keywords": [],
   "author": "",

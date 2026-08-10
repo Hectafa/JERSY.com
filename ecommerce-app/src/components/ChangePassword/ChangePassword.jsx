@@ -32,17 +32,17 @@ export default function ChangePassword() {
         const errors = {};
 
         if (!form.currentPassword.trim()) {
-            errors.currentPassword = "Current password is required";
+            errors.currentPassword = "La contraseña actual es obligatoria";
         }
 
         if (!form.newPassword.trim()) {
-            errors.newPassword = "New password is required";
+            errors.newPassword = "La nueva contraseña es obligatoria";
         } else if (form.newPassword.trim().length < 6) {
-            errors.newPassword = "New password must be at least 6 characters";
+            errors.newPassword = "La nueva contraseña debe tener al menos 6 caracteres";
         }
 
         if (form.confirmedPassword !== form.newPassword){
-            errors.confirmedPassword = "Passwords do not match";
+            errors.confirmedPassword = "Las contraseñas no coinciden";
         }
 
         return errors;
@@ -81,7 +81,7 @@ export default function ChangePassword() {
         if (kind === "CLIENT_ERROR" && err.status === 400) {
             const backendMessage = err.original?.response?.data?.message;
             if (backendMessage === "Current password is incorrect") {
-                setFieldErrors({ currentPassword: "Current password is incorrect" });
+                setFieldErrors({ currentPassword: "La contraseña actual es incorrecta" });
                 return;
             }
             setErrorKind("BAD_REQUEST");
@@ -103,7 +103,7 @@ export default function ChangePassword() {
     return (
         <div className="change-password-container">
             <div className="change-password-card">
-                <h2>Change Password</h2>
+                <h2>Cambiar contraseña</h2>
 
                 <form 
                 className="change-password-form"
@@ -115,7 +115,7 @@ export default function ChangePassword() {
                     <Input
                         id="currentPassword"
                         type="password"
-                        label="Current Password"
+                        label="Contraseña actual"
                         value={form.currentPassword}
                         onChange={handleChange("currentPassword")}
                         data-testid="change-password-current-input"
@@ -129,7 +129,7 @@ export default function ChangePassword() {
                 <div className="form-group">
                     <Input
                         id="newPassword"
-                        label="New Password"
+                        label="Nueva contraseña"
                         type="password"
                         value={form.newPassword}
                         onChange={handleChange("newPassword")}
@@ -144,7 +144,7 @@ export default function ChangePassword() {
                 <div className="form-group">
                     <Input
                         id="confirmedPassword"
-                        label="Confirm New Password"
+                        label="Confirmar nueva contraseña"
                         type="password"
                         value={form.confirmedPassword}
                         onChange={handleChange("confirmedPassword")}
@@ -165,7 +165,7 @@ export default function ChangePassword() {
                 variant="primary"
                 data-testid="change-password-submit-button"
                 >
-                    {loading ? "Updating..." : "Change password"}
+                    {loading ? "Actualizando..." : "Cambiar contraseña"}
                 </Button>
             </form>
         </div>

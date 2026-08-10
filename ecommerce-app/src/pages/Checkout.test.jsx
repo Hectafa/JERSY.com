@@ -179,7 +179,7 @@ describe("Checkout", () => {
     });
     expect(createOrder).toHaveBeenCalledWith({
       user: "user-1",
-      products: [{ productId: "prod-1", quantity: 2, price: 100 }],
+      products: [{ productId: "prod-1", size: null, quantity: 2, price: 100 }],
       address: "addr-1",
       paymentMethod: "pay-1",
       totalPrice: 582,

@@ -12,6 +12,7 @@ import Loading from "../common/Loading/Loading";
 // Rutas fuera del camino crítico (no son "/"): se descargan bajo demanda
 // para reducir el bundle inicial. Home/Login/Register/ProtectedRoute se
 // mantienen eager porque son la entrada más común o wrappers triviales.
+const AdminCategories = lazy(() => import("../../pages/AdminCategories"));
 const AdminProducts = lazy(() => import("../../pages/AdminProducts"));
 const AdminOrders = lazy(() => import("../../pages/AdminOrders"));
 const AdminUsers = lazy(() => import("../../pages/AdminUsers"));
@@ -106,6 +107,14 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route
                 path="/admin/products"
+                element={
+                  <ProtectedRoute redirectTo="/login" allowedRoles={["admin"]}>
+                    <AdminCategories />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/products/:categoryId"
                 element={
                   <ProtectedRoute redirectTo="/login" allowedRoles={["admin"]}>
                     <AdminProducts />

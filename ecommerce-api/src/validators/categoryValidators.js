@@ -8,7 +8,7 @@ export const categoryIdValidation = [
 
 export const createCategoryValidation = [
     body("name").notEmpty().withMessage("Name is required"),
-    body("description").notEmpty().withMessage("Description is required"),
+    body("description").optional().trim(),
     body("parentCategory")
         .optional()
         .isMongoId()
