@@ -53,3 +53,27 @@ export function isTokenExpired(token) {
   // exp es en segundos, Date.now() es en ms.
   return Date.now() >= payload.exp * 1000;
 }
+
+const REFRESH_TOKEN_KEY = "refreshToken";
+
+/**
+ * Guarda el refresh token en localStorage
+ */
+export function saveRefreshToken(refreshToken) {
+  if (!refreshToken) return;
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+/**
+ * Lee el refresh token de localStorage. Devuelve null si no existe
+ */
+export function getRefreshToken() {
+  return localStorage.getItem(REFRESH_TOKEN_KEY) || null;
+}
+
+/**
+ * Elimina el refresh token (logout)
+ */
+export function clearRefreshToken() {
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}

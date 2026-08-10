@@ -1,11 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { login as loginService } from "../services/authService";
+import { login as loginService, refresh as refreshService } from "../services/authService";
 import { getUserProfile } from "../services/userService";
 import {
+  clearRefreshToken,
   clearToken,
   decodeToken,
+  getRefreshToken,
   getToken,
   isTokenExpired,
+  saveRefreshToken,
   saveToken,
 } from "../utils/auth";
 
@@ -28,25 +31,44 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
+    async function initAuth() {
+      let token = getToken();
 
-    if (!token) {
+      if (token && isTokenExpired(token)) {
+        const refreshToken = getRefreshToken();
+
+        if (refreshToken && !isTokenExpired(refreshToken)) {
+          try {
+            const { token: newToken } = await refreshService(refreshToken);
+            saveToken(newToken);
+            token = newToken;
+          } catch {
+            token = null;
+          }
+        } else {
+          token = null;
+        }
+
+        if (!token) {
+          clearToken();
+          clearRefreshToken();
+        }
+      }
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const payload = decodeToken(token);
+      if (payload) {
+        setUser({ id: payload.userId, name: payload.name, role: payload.role });
+        hydrateProfile(payload.userId, setUser);
+      }
       setLoading(false);
-      return;
     }
 
-    if (isTokenExpired(token)) {
-      clearToken();
-      setLoading(false);
-      return;
-    }
-
-    const payload = decodeToken(token);
-    if (payload) {
-      setUser({ id: payload.userId, name: payload.name, role: payload.role });
-      hydrateProfile(payload.userId, setUser);
-    }
-    setLoading(false);
+    initAuth();
   }, []);
 
   useEffect(() => {
@@ -62,8 +84,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (credentials) => {
-    const { token } = await loginService(credentials);
+    const { token, refreshToken } = await loginService(credentials);
     saveToken(token);
+    saveRefreshToken(refreshToken);
 
     const payload = decodeToken(token);
     if (!payload) throw new Error("Token inválido del backend");
@@ -73,6 +96,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     clearToken();
+    clearRefreshToken();
     setUser(null);
   }, []);
 

@@ -43,9 +43,69 @@ apiClient.interceptors.request.use((config) => {
   return config
 });
 
+import { clearToken, clearRefreshToken, getRefreshToken, saveToken } from "../utils/auth";
+
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function onRefreshed(newToken) {
+  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers = [];
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+    const url = originalRequest?.url || "";
+    const isAuthEndpoint = url.includes("/auth/refresh") || url.includes("/auth/login");
+
+    if (status === 401 && !isAuthEndpoint && !originalRequest._retry) {
+      const refreshToken = getRefreshToken();
+
+      if (!refreshToken) {
+        clearToken();
+        clearRefreshToken();
+        const classified = classifyError(error);
+        console.error(`[API ${classified.kind}]`, classified);
+        return Promise.reject(classified);
+      }
+
+      originalRequest._retry = true;
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          refreshSubscribers.push((newToken) => {
+            if (!newToken) {
+              reject(error);
+              return;
+            }
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            resolve(apiClient(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const { data } = await apiClient.post("/auth/refresh", { refreshToken });
+        saveToken(data.token);
+        isRefreshing = false;
+        onRefreshed(data.token);
+        originalRequest.headers.Authorization = `Bearer ${data.token}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        isRefreshing = false;
+        onRefreshed(null);
+        clearToken();
+        clearRefreshToken();
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
+
     const classified = classifyError(error);
     console.error(`[API ${classified.kind}]`, classified);
     return Promise.reject(classified);

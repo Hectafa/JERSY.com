@@ -40,4 +40,13 @@ const login = async (credentials) => {
   };
 };
 
-export { register, login };
+/**
+ * @param {string} refreshToken
+ * @returns {Promise<{token:string}>}
+ */
+const refresh = async (refreshToken) => {
+  const response = await apiClient.post("/auth/refresh", { refreshToken });
+  return { token: response.data.token };
+};
+
+export { register, login, refresh };

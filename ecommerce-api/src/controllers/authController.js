@@ -10,7 +10,7 @@ const generateToken = (userId, name, role) => {
 
 const generateRefreshToken = (userId) => {
   const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_TOKEN, {
-    expiresIn: "7d",
+    expiresIn: "12h",
   });
 
   return { token: refreshToken, userId };
@@ -79,4 +79,31 @@ const login = async (req, res, next) => {
   }
 };
 
-export { register, login };
+const refresh = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ message: "Refresh token is required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid or expired refresh token" });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ message: "User no longer exists" });
+    }
+
+    const token = generateToken(user._id, user.name, user.role);
+    res.status(200).json({ token });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { register, login, refresh };
