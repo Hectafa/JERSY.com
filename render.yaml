@@ -1,0 +1,57 @@
+# Render Blueprint para 2026-REACTFS (ecommerce-api)
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Este archivo SOLO define el backend en Render. El frontend se despliega
+# aparte en Vercel, y la base de datos vive en MongoDB Atlas: ninguna de
+# las dos se puede "configurar" desde este YAML, solo se conectan via
+# variables de entorno (ver notas abajo).
+#
+# Como usarlo:
+# 1. Sube este archivo a la raiz del repo (ya esta aqui).
+# 2. En Render: New > Blueprint > conecta este repo de GitHub.
+# 3. Render detecta render.yaml y te pedira los valores marcados con
+#    "sync: false" (MONGODB_URI y CORS_ORIGIN).
+
+services:
+  - type: web
+    name: ecommerce-api
+    runtime: node
+    plan: free # sube a "starter" si necesitas que no "duerma" por inactividad
+    region: oregon # cambia a la region mas cercana a tus usuarios/DB de Atlas
+    branch: main # ajusta si tu rama de produccion es otra
+    rootDir: ecommerce-api
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+
+      # --- MongoDB Atlas ---
+      - key: MONGODB_URI
+        sync: false # pega aqui el connection string de Atlas (te lo pide Render al crear el Blueprint)
+
+      # --- Autenticacion (JWT) ---
+      - key: JWT_SECRET
+        generateValue: true # Render genera un valor aleatorio seguro por ti
+      - key: JWT_REFRESH_TOKEN
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1h
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 12h
+
+      # --- CORS: dominio del frontend en Vercel ---
+      # Acepta uno o varios origenes separados por coma, ej:
+      # https://tu-app.vercel.app,https://tu-dominio.com
+      - key: CORS_ORIGIN
+        sync: false
+
+    # --- Disco persistente opcional para /public/uploads (avatares) ---
+    # Render borra el filesystem local en cada deploy/restart. Si no
+    # agregas un disco, los avatares subidos con multer se PERDERAN al
+    # redesplegar. Requiere plan pago (no disponible en "free"):
+    # disk:
+    #   name: uploads
+    #   mountPath: /opt/render/project/src/ecommerce-api/public/uploads
+    #   sizeGB: 1
