@@ -1,4 +1,6 @@
 import axios from "axios";
+import { clearToken, clearRefreshToken, getRefreshToken, saveToken } from "../utils/auth";
+
 
 const apiClient = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:4000/api",
@@ -42,8 +44,6 @@ apiClient.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config
 });
-
-import { clearToken, clearRefreshToken, getRefreshToken, saveToken } from "../utils/auth";
 
 let isRefreshing = false;
 let refreshSubscribers = [];
