@@ -2,7 +2,7 @@
 
 E-commerce de venta de jerseys/playeras de fútbol soccer. Monorepo con backend (API) y frontend (SPA), pensado para desplegarse como tres piezas independientes: API en Render, frontend en Vercel y base de datos en MongoDB Atlas.
 
-> **Estado del despliegue:** actualmente no hay demo pública — las instancias en Vercel, Render y el cluster de MongoDB Atlas fueron dadas de baja y se volverán a desplegar más adelante. Todo el proyecto corre localmente siguiendo esta guía.
+> **Estado del despliegue:** en producción — frontend en [jersy-app.vercel.app](https://jersy-app.vercel.app), backend en [ecommerce-api-weeq.onrender.com](https://ecommerce-api-weeq.onrender.com), base de datos en MongoDB Atlas.
 
 ## Estructura
 
@@ -114,11 +114,9 @@ No hay script de seed de productos en el repo actualmente — el catálogo se pu
 
 ## Despliegue
 
-- **Backend → Render:** blueprint en [`render.yaml`](render.yaml) (`New > Blueprint` en Render, apuntando a este repo). Pide `MONGODB_URI` y `CORS_ORIGIN` al crear el servicio; el resto de variables JWT se generan automáticamente.
-- **Frontend → Vercel:** desplegar `ecommerce-app/` como proyecto, configurando `REACT_APP_API_URL` apuntando a la URL del backend en Render.
+- **Backend → Render:** [ecommerce-api-weeq.onrender.com](https://ecommerce-api-weeq.onrender.com), desplegado desde blueprint [`render.yaml`](render.yaml) (`New > Blueprint` en Render, apuntando a este repo). Variables `MONGODB_URI` y `CORS_ORIGIN` configuradas manualmente; el resto (JWT) se generó automáticamente. Plan free: el servicio "duerme" tras inactividad y el filesystem es efímero (las imágenes subidas vía `multer` se pierden en cada redeploy).
+- **Frontend → Vercel:** [jersy-app.vercel.app](https://jersy-app.vercel.app), proyecto `jersy-app` conectado al repo de GitHub (Root Directory `ecommerce-app`, deploy automático en cada push a `main`). Variable `REACT_APP_API_URL` apunta a la URL del backend en Render.
 - **Base de datos → MongoDB Atlas:** cluster gestionado; el connection string va en `MONGODB_URI`.
-
-Ninguna de las tres piezas está desplegada actualmente (ver nota al inicio de este README).
 
 ## CI
 

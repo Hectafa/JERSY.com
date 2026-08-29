@@ -13,7 +13,7 @@ E-commerce de venta de jerseys/playeras de fútbol soccer. Monorepo: backend (`e
 
 ## Estado de despliegue
 
-Sin demo pública por ahora: las instancias de Vercel (frontend), Render (backend, ver `render.yaml`) y el cluster de MongoDB Atlas fueron dadas de baja y se volverán a desplegar más adelante. Todo el desarrollo/pruebas corre en local.
+En producción: frontend en Vercel (`jersy-app`, https://jersy-app.vercel.app, conectado al repo con deploy automático en cada push a `main`), backend en Render (https://ecommerce-api-weeq.onrender.com, blueprint en `render.yaml`) y base de datos en MongoDB Atlas. Plan free de Render: filesystem efímero, las imágenes subidas vía `multer` se pierden en cada redeploy.
 
 ## Notas
 
