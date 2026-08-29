@@ -4,13 +4,13 @@ import User from "../models/User.js";
 
 const generateToken = (userId, name, role) => {
   return jwt.sign({ userId, name, role }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
   });
 };
 
 const generateRefreshToken = (userId) => {
   const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_TOKEN, {
-    expiresIn: "12h",
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "12h",
   });
 
   return { token: refreshToken, userId };
