@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import BannerCarousel from "../components/BannerCarousel";
 import List from "../components/List/List";
 import ErrorMessage from "../components/common/ErrorMessage/ErrorMessage";
@@ -7,53 +7,33 @@ import homeImages from "../data/homeImages.json";
 import { getAllProducts } from "../services/productsService";
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [, setPagination] = useState(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["products", "all"],
+    queryFn: getAllProducts,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getAllProducts();
-        if (cancelled) return;
-        setProducts(data.products);
-        setPagination(data.pagination);
-      } catch (err) {
-        if (!cancelled) setError(err.kind || "UNKNOWN");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    loadProducts();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const products = data?.products ?? [];
+  const errorKind = error?.kind || (error ? "UNKNOWN" : null);
 
   return (
     <div>
       <BannerCarousel banners={homeImages} />
-      {loading && <Loading>Cargando productos...</Loading>}
-      {!loading && error && error === "NETWORK" && (
+      {isLoading && <Loading>Cargando productos...</Loading>}
+      {!isLoading && errorKind && errorKind === "NETWORK" && (
         <ErrorMessage>
           No pudimos conectar. Revisa tu conexión a internet
         </ErrorMessage>
       )}
-      {!loading && error && error === "SERVER_ERROR" && (
+      {!isLoading && errorKind && errorKind === "SERVER_ERROR" && (
         <ErrorMessage>Algo salió mal. Intenta mas tarde.</ErrorMessage>
       )}
-      {!loading && error && error !== "NETWORK" && error !== "SERVER_ERROR" && (
-        <ErrorMessage>Ocurrió un error inesperado.{error}</ErrorMessage>
+      {!isLoading && errorKind && errorKind !== "NETWORK" && errorKind !== "SERVER_ERROR" && (
+        <ErrorMessage>Ocurrió un error inesperado.{errorKind}</ErrorMessage>
       )}
-      {!loading && !error && products.length === 0 && (
+      {!isLoading && !errorKind && products.length === 0 && (
         <ErrorMessage>No hay productos en el catálogo.</ErrorMessage>
       )}
-      {!loading && !error && products.length > 0 && (
+      {!isLoading && !errorKind && products.length > 0 && (
         <List
           title="Productos recomendados"
           products={products}

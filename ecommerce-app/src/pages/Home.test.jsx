@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Home from "./Home";
 import { getAllProducts } from "../services/productsService";
 import { AuthProvider } from "../context/AuthContext";
@@ -20,14 +21,20 @@ const buildProduct = (overrides = {}) => ({
 });
 
 function renderHome() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
   return render(
-    <MemoryRouter>
-      <AuthProvider>
-        <CartProvider>
-          <Home />
-        </CartProvider>
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <AuthProvider>
+          <CartProvider>
+            <Home />
+          </CartProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

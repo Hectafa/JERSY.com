@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CartProvider } from "../../context/CartContext";
 import Layout from "../../layout/Layout";
 import Home from "../../pages/Home";
@@ -28,14 +29,17 @@ const Profile = lazy(() => import("../../pages/Profile"));
 const SearchResults = lazy(() => import("../../pages/SearchResults"));
 const WishList = lazy(() => import("../../pages/WishList"));
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <Layout>
-            <Suspense fallback={<Loading>Cargando...</Loading>}>
-            <Routes>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <Layout>
+              <Suspense fallback={<Loading>Cargando...</Loading>}>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/login" element={<Login />} />
@@ -138,12 +142,13 @@ function App() {
                 }
               />
               <Route path="*" element={<div>Ruta no encontrada</div>} />
-            </Routes>
-            </Suspense>
-          </Layout>
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+              </Routes>
+              </Suspense>
+            </Layout>
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
